@@ -15,6 +15,11 @@ That notebook is meant to be the primary initial experimentation engine because 
 - run the same extraction and comparison contract across the full ladder
 - emit a decision-ready summary before another round of prompt or budget changes
 
+It now defaults to a **zero-edit starter preset**:
+
+- run the notebook unchanged for a fixture-backed end-to-end starter pass
+- switch `EXPERIMENT_MODE` to `real` only when you want to supply your own model and manifests
+
 Reason:
 
 - the repo now has a working Colab GPU generation path via `scripts/colab_hf_generate.py`
@@ -27,6 +32,8 @@ Reason:
 Choose `Runtime -> Change runtime type -> T4 / L4 / A100 GPU` if available.
 
 If you are starting from the notebook, open [`../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb) in Colab first. It bootstraps the repo into `/content/SSD_AIMO3` and then runs the same steps documented below.
+
+If you just want a no-configuration smoke pass, leave the notebook in its default `starter` mode and run it top-to-bottom.
 
 Probe the runtime first:
 

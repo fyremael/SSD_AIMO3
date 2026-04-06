@@ -9,6 +9,15 @@ from common import read_jsonl, write_json
 
 JsonDict = Dict[str, Any]
 DEFAULT_LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+FALLBACK_LORA_TARGETS = [
+    "c_attn",
+    "c_proj",
+    "c_fc",
+    "query_key_value",
+    "dense",
+    "dense_h_to_4h",
+    "dense_4h_to_h",
+]
 
 
 def parse_dtype_name(name: str) -> str:
@@ -23,6 +32,16 @@ def parse_target_modules(value: str | None) -> List[str]:
         return list(DEFAULT_LORA_TARGETS)
     parsed = [item.strip() for item in str(value).split(",") if item.strip()]
     return parsed or list(DEFAULT_LORA_TARGETS)
+
+
+def guess_target_modules_from_module_names(module_names: Iterable[str]) -> List[str]:
+    discovered: List[str] = []
+    candidate_names = list(DEFAULT_LORA_TARGETS) + list(FALLBACK_LORA_TARGETS)
+    for name in module_names:
+        leaf_name = str(name).rsplit(".", 1)[-1]
+        if leaf_name in candidate_names and leaf_name not in discovered:
+            discovered.append(leaf_name)
+    return discovered or list(DEFAULT_LORA_TARGETS)
 
 
 def build_training_texts(rows: Sequence[Mapping[str, Any]], text_field: str) -> List[str]:
@@ -57,12 +76,7 @@ def _resolve_torch_dtype(torch_module: Any, dtype_name: str) -> Any:
 
 
 def _guess_target_modules(model: Any) -> List[str]:
-    discovered = []
-    for name, module in model.named_modules():
-        leaf_name = name.rsplit(".", 1)[-1]
-        if leaf_name in DEFAULT_LORA_TARGETS and leaf_name not in discovered:
-            discovered.append(leaf_name)
-    return discovered or list(DEFAULT_LORA_TARGETS)
+    return guess_target_modules_from_module_names(name for name, _ in model.named_modules())
 
 
 def run_training(args: argparse.Namespace) -> JsonDict:

@@ -6,6 +6,11 @@ Primary notebook:
 
 This notebook is the intended first engine for Colab-based experimentation.
 
+Default behavior:
+
+- run it without edits for a self-contained fixture-backed starter pass
+- switch `EXPERIMENT_MODE` to `real` when you want to point it at a real model and corpus
+
 It is structured to:
 
 - bootstrap the repo into a fresh Colab runtime when needed

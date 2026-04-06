@@ -38,12 +38,13 @@ python scripts/build_problem_manifests.py \
 
 ### 3. Notebook-first Colab validation
 
-Use the notebook when the goal is to methodically validate or invalidate the thesis on a real model and corpus:
+Use the notebook when the goal is to methodically validate or invalidate the thesis:
 
 - open [`notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb) in Colab
+- run it as-is for a guaranteed self-contained fixture-backed starter pass
+- switch `EXPERIMENT_MODE` from `\"starter\"` to `\"real\"` when you are ready to plug in a real model and corpus
 - let it clone the repo, install the GPU stack, and normalize manifests if needed
-- materialize a clean A0/A1/A1-eval/A5 config bundle from one parameter surface
-- run the full A0 -> A1 -> A5 ladder and inspect the paired summaries before changing prompts or budgets
+- use the paired summaries before changing prompts or budgets
 
 ### 4. Colab GPU deployment
 
