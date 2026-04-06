@@ -1,8 +1,14 @@
 inherits_from:
   - a0_frozen_baseline.yaml
 
+experiment:
+  name: colab_gpu_a1_student_eval
+  stage: A1_eval
+  objective: evaluate the trained A1 student adapter under the A0-style evaluation stack
+
 model:
   base_model_id: REPLACE_WITH_HF_MODEL_ID
+  adapter_path: REPLACE_WITH_A1_ADAPTER_PATH
   trust_remote_code: false
 
 paths:
@@ -11,7 +17,7 @@ paths:
   problem_metadata_jsonl: REPLACE_WITH_PROBLEM_METADATA_JSONL
 
 inputs:
-  eval_input_jsonl: REPLACE_WITH_EVAL_GENERATIONS_JSONL
+  eval_input_jsonl: REPLACE_WITH_EVAL_PROMPTS_JSONL
 
 generation:
   backend: command_jsonl

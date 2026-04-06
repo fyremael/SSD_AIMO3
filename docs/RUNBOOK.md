@@ -3,6 +3,8 @@
 
 This runbook turns the validation pack into a disciplined first-execution workflow for Grand Challenge research agents, coder agents, evaluation agents, and infra agents.
 
+For the first real GPU-backed pass, the recommended operating surface is [`../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb), which keeps the A0 -> A1 -> A5 ladder and decision criteria in one Colab notebook.
+
 It assumes the program posture already fixed in `TASKS.md`:
 
 > We are validating whether the described SSD-style method family is useful for olympiad-style math, not attempting exact reproduction of Apple’s code-generation tables.

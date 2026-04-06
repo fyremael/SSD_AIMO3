@@ -54,13 +54,15 @@ def _resolve_torch_dtype(torch_module: Any, dtype_name: str) -> Any:
 
 def run_generation(args: argparse.Namespace) -> JsonDict:
     import torch
+    from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     dtype_name = parse_dtype_name(args.dtype)
     request_rows = read_jsonl(args.input_jsonl)
     prompt_rows = [str(row.get(args.prompt_field, "")) for row in request_rows]
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_id, trust_remote_code=bool(args.trust_remote_code))
+    tokenizer_id = str(args.tokenizer_id or args.model_id)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, trust_remote_code=bool(args.trust_remote_code))
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -82,6 +84,8 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
         model_kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
 
     model = AutoModelForCausalLM.from_pretrained(args.model_id, **model_kwargs)
+    if args.adapter_path:
+        model = PeftModel.from_pretrained(model, args.adapter_path)
     try:
         model_device = next(model.parameters()).device
     except StopIteration:
@@ -125,6 +129,8 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
     write_jsonl(Path(args.output_jsonl), generated_rows)
     summary = {
         "model_id": args.model_id,
+        "tokenizer_id": tokenizer_id,
+        "adapter_path": args.adapter_path,
         "num_requests": len(request_rows),
         "num_outputs": len(generated_rows),
         "batch_size": args.batch_size,
@@ -144,6 +150,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-jsonl", required=True)
     parser.add_argument("--summary-json", default=None)
     parser.add_argument("--model-id", required=True)
+    parser.add_argument("--tokenizer-id", default=None)
+    parser.add_argument("--adapter-path", default=None)
     parser.add_argument("--prompt-field", default="rendered_prompt_text")
     parser.add_argument("--output-field", default="generation_text")
     parser.add_argument("--batch-size", type=int, default=2)

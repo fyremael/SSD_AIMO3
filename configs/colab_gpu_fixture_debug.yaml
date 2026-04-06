@@ -14,7 +14,7 @@ inputs:
   eval_input_jsonl: data/fixture_eval_samples_a1.jsonl
 
 generation:
-  command: '"{python_executable}" scripts/colab_hf_generate.py --input-jsonl "{input_jsonl}" --output-jsonl "{output_jsonl}" --summary-json "{output_dir}/hf_generate_summary.json" --model-id "{model_id}" --prompt-field rendered_prompt_text --output-field "{generation_field}" --batch-size 1 --max-new-tokens 64 --temperature 0.7 --top-p 0.95 --top-k 50 --do-sample --dtype float32 --quantization none'
+  command: '"{python_executable}" scripts/colab_hf_generate.py --input-jsonl "{input_jsonl}" --output-jsonl "{output_jsonl}" --summary-json "{output_dir}/hf_generate_summary.json" --model-id "{model_id}" {tokenizer_id_arg} {adapter_path_arg} {trust_remote_code_flag} --prompt-field rendered_prompt_text --output-field "{generation_field}" --batch-size 1 --max-new-tokens 64 --temperature 0.7 --top-p 0.95 --top-k 50 --do-sample --dtype float32 --quantization none'
 
 training:
   max_seq_length: 512

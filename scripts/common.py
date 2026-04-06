@@ -20,13 +20,17 @@ def build_arg_parser(description: str) -> argparse.ArgumentParser:
     return parser
 
 
-def _deep_merge(base: MutableMapping[str, Any], update: Mapping[str, Any]) -> MutableMapping[str, Any]:
+def deep_merge(base: MutableMapping[str, Any], update: Mapping[str, Any]) -> MutableMapping[str, Any]:
     for key, value in update.items():
         if isinstance(value, Mapping) and isinstance(base.get(key), MutableMapping):
-            _deep_merge(base[key], value)
+            deep_merge(base[key], value)
         else:
             base[key] = value
     return base
+
+
+def _deep_merge(base: MutableMapping[str, Any], update: Mapping[str, Any]) -> MutableMapping[str, Any]:
+    return deep_merge(base, update)
 
 
 def load_yaml(path: Path) -> JsonDict:
@@ -101,10 +105,10 @@ def _resolve_config_reference(ref: str, *, root: Path, stack: Sequence[str]) -> 
     merged: JsonDict = {}
     next_stack = list(stack) + [reference_id]
     for item in inherited:
-        _deep_merge(merged, _resolve_config_reference(str(item), root=path.parent, stack=next_stack))
+        deep_merge(merged, _resolve_config_reference(str(item), root=path.parent, stack=next_stack))
     data = dict(data)
     data.pop("inherits_from", None)
-    _deep_merge(merged, data)
+    deep_merge(merged, data)
     return merged
 
 

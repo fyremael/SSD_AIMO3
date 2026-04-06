@@ -16,10 +16,12 @@ CONFIGS_DIR = ROOT / "configs"
 SCRIPTS_DIR = ROOT / "scripts"
 TESTS_DIR = ROOT / "tests"
 DATA_DIR = ROOT / "data"
+NOTEBOOKS_DIR = ROOT / "notebooks"
 WORKFLOWS_DIR = ROOT / ".github" / "workflows"
 SCRIPT_DESCRIPTION_FALLBACKS: Dict[str, str] = {
     "scripts/common.py": "Shared config resolution, JSONL I/O, and utility helpers used across the repo.",
     "scripts/constraint_library.py": "Cheap auditable constraint checks and penalty scoring helpers for tropical reranking.",
+    "scripts/materialize_colab_bundle.py": "Materialize notebook-driven Colab config bundles for A0, A1, A1 student eval, and A5 runs.",
     "scripts/update_docs.py": "Generate repo index, status, and summary documentation artifacts.",
 }
 CONFIG_DESCRIPTION_FALLBACKS: Dict[str, str] = {
@@ -32,6 +34,7 @@ CONFIG_DESCRIPTION_FALLBACKS: Dict[str, str] = {
     "configs/fixture_a5.yaml": "Fixture-backed A5 config for local regression testing.",
     "configs/colab_gpu_a0.yaml": "Colab GPU baseline evaluation config.",
     "configs/colab_gpu_a1.yaml": "Colab GPU self-distillation generation and training config.",
+    "configs/colab_gpu_a1_student_eval.yaml": "Colab GPU config for evaluating the trained A1 student adapter.",
     "configs/colab_gpu_a5.yaml": "Colab GPU tropical reranking config.",
     "configs/colab_gpu_fixture_debug.yaml": "Small-model Colab debug config for smoke testing the GPU lane.",
 }
@@ -123,14 +126,17 @@ def build_summary() -> JsonDict:
     config_rows = collect_config_catalog()
     script_rows = collect_script_catalog()
     workflow_rows = collect_workflow_catalog()
+    notebook_files = list_relative_files(NOTEBOOKS_DIR, "*.ipynb") if NOTEBOOKS_DIR.exists() else []
     summary: JsonDict = {
         "docs_count": len(docs_files),
         "config_count": len(config_rows),
         "script_count": len(script_rows),
         "test_count": len(list_relative_files(TESTS_DIR, "test_*.py")),
         "fixture_data_count": len(list_relative_files(DATA_DIR, "*.jsonl")),
+        "notebook_count": len(notebook_files),
         "workflow_count": len(workflow_rows),
         "docs_files": [path.as_posix() for path in docs_files],
+        "notebook_files": [path.as_posix() for path in notebook_files],
         "config_catalog": config_rows,
         "script_catalog": script_rows,
         "workflow_catalog": workflow_rows,
@@ -158,12 +164,17 @@ def render_index(summary: Mapping[str, Any]) -> str:
         "- `docs/RUNBOOK.md` for the validation workflow and experiment posture",
         "- `docs/REAL_RUNS.md` for real-data and external-backend plumbing",
         "- `docs/COLAB_DEPLOYMENT.md` for the initial Colab GPU deployment path",
+        "- `notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb` for the notebook-first thesis validation engine",
         "- `docs/FIXTURE_LADDER.md` for the replayable local benchmark harness",
         "",
         "## Repo docs",
         "",
     ]
     lines.extend(_render_bullet_paths(summary.get("docs_files", [])))
+    notebook_files = summary.get("notebook_files", []) or []
+    if notebook_files:
+        lines.extend(["", "## Notebook engines", ""])
+        lines.extend(_render_bullet_paths(str(path) for path in notebook_files))
     lines.extend(
         [
             "",
@@ -212,6 +223,7 @@ def render_status(summary: Mapping[str, Any]) -> str:
         f"- Script entry points: {summary.get('script_count')}",
         f"- Test files: {summary.get('test_count')}",
         f"- Fixture data files: {summary.get('fixture_data_count')}",
+        f"- Notebook engines: {summary.get('notebook_count')}",
         f"- GitHub workflows: {summary.get('workflow_count')}",
         "",
         "## Automated upkeep",
@@ -233,6 +245,7 @@ def render_status(summary: Mapping[str, Any]) -> str:
             "- Paired run comparison with discordant-pair statistics",
             "- Fixture ladder for A0 -> A1 -> A5 regression testing",
             "- Real-run manifest normalization and external backend hooks",
+            "- Notebook-first Colab experimentation engine with parameterized bundle materialization",
             "- Initial Colab GPU generation and LoRA training path",
         ]
     )

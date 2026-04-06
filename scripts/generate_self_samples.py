@@ -227,9 +227,25 @@ def _run_external_generation_backend(
         "input_jsonl": str(requests_path.resolve()),
         "output_jsonl": str(responses_path.resolve()),
         "model_id": str(config.get("model", {}).get("base_model_id") or ""),
+        "tokenizer_id": str(config.get("model", {}).get("tokenizer_id") or ""),
+        "tokenizer_id_arg": "",
+        "adapter_path": str(
+            config.get("generation", {}).get("adapter_path")
+            or config.get("model", {}).get("adapter_path")
+            or ""
+        ),
+        "adapter_path_arg": "",
+        "trust_remote_code": str(bool(config.get("model", {}).get("trust_remote_code", False))).lower(),
+        "trust_remote_code_flag": "",
         "generation_field": generation_field,
         "num_rows": len(request_rows),
     }
+    if values["tokenizer_id"]:
+        values["tokenizer_id_arg"] = f'--tokenizer-id "{values["tokenizer_id"]}"'
+    if values["adapter_path"]:
+        values["adapter_path_arg"] = f'--adapter-path "{values["adapter_path"]}"'
+    if values["trust_remote_code"] == "true":
+        values["trust_remote_code_flag"] = "--trust-remote-code"
     command = render_string_template(str(command_template), values)
     workdir = Path(str(generation_cfg.get("command_workdir") or Path.cwd())).resolve()
     subprocess.run(command, cwd=str(workdir), shell=True, check=True)

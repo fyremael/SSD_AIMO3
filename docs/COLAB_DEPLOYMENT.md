@@ -3,6 +3,18 @@
 
 The recommended first deployment target is **Colab GPU**, not TPU.
 
+The recommended first operating surface is the notebook:
+
+- [`../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb)
+
+That notebook is meant to be the primary initial experimentation engine because it keeps the full thesis-validation ladder in one place:
+
+- define the hypothesis and falsification posture up front
+- normalize raw problem data into manifests if needed
+- materialize a clean config bundle for A0, A1, A1 student eval, and A5
+- run the same extraction and comparison contract across the full ladder
+- emit a decision-ready summary before another round of prompt or budget changes
+
 Reason:
 
 - the repo now has a working Colab GPU generation path via `scripts/colab_hf_generate.py`
@@ -13,6 +25,8 @@ Reason:
 ## 1. Start the Colab runtime
 
 Choose `Runtime -> Change runtime type -> T4 / L4 / A100 GPU` if available.
+
+If you are starting from the notebook, open [`../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb) in Colab first. It bootstraps the repo into `/content/SSD_AIMO3` and then runs the same steps documented below.
 
 Probe the runtime first:
 
@@ -54,10 +68,13 @@ Use this on **problem-level rows**, not sample-level generations.
 
 ## 4. Configure the Colab stage files
 
+If you are using the notebook path, prefer `scripts/materialize_colab_bundle.py` over hand-editing multiple stage files.
+
 Start from:
 
 - `configs/colab_gpu_a0.yaml`
 - `configs/colab_gpu_a1.yaml`
+- `configs/colab_gpu_a1_student_eval.yaml`
 - `configs/colab_gpu_a5.yaml`
 
 Replace:
@@ -71,6 +88,17 @@ Replace:
 For a quick debug pass on Colab with a tiny public model, use:
 
 - `configs/colab_gpu_fixture_debug.yaml`
+
+For the notebook-driven path, the bundle materializer keeps these synchronized from one parameter cell:
+
+```bash
+python scripts/materialize_colab_bundle.py \
+  --output-dir runs/colab_bundle \
+  --model-id your/model \
+  --prompt-manifest-jsonl data/real_prompts.jsonl \
+  --eval-prompt-manifest-jsonl data/real_eval_prompts.jsonl \
+  --problem-metadata-jsonl data/real_problem_metadata.jsonl
+```
 
 ## 5. Generate A1 self-samples on GPU
 
@@ -108,6 +136,8 @@ For A0 or A1 eval:
 
 1. generate eval samples with `scripts/generate_self_samples.py` using your eval prompt manifest
 2. score them with `scripts/run_eval_math.py`
+
+For the trained A1 student on Colab, use `configs/colab_gpu_a1_student_eval.yaml` or the notebook-generated `a1_student_eval.yaml` so the adapter is evaluated through the same extraction surface as A0.
 
 Example:
 

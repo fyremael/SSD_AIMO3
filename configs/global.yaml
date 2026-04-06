@@ -6,6 +6,7 @@ experiment:
 model:
   base_model_id: REPLACE_WITH_BASE_MODEL_ID
   tokenizer_id: null
+  adapter_path: null
   trust_remote_code: false
 
 paths:

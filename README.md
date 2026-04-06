@@ -11,6 +11,7 @@ Validation harness for testing SSD-style self-distillation on AIMO-style exact-i
 - compares A0, A1, and A5 runs with paired reports
 - includes a replayable fixture ladder for regression testing
 - includes an initial Colab GPU deployment path for generation and LoRA training
+- includes a notebook-first Colab experimentation engine aimed at thesis validation, not demo optimization
 
 ## Main workflows
 
@@ -35,18 +36,28 @@ python scripts/build_problem_manifests.py \
   --summary-json data/real_manifest_summary.json
 ```
 
-### 3. Colab GPU deployment
+### 3. Notebook-first Colab validation
+
+Use the notebook when the goal is to methodically validate or invalidate the thesis on a real model and corpus:
+
+- open [`notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb) in Colab
+- let it clone the repo, install the GPU stack, and normalize manifests if needed
+- materialize a clean A0/A1/A1-eval/A5 config bundle from one parameter surface
+- run the full A0 -> A1 -> A5 ladder and inspect the paired summaries before changing prompts or budgets
+
+### 4. Colab GPU deployment
 
 Use the Colab GPU path for the first real deployment lane:
 
 - install `requirements/colab-gpu.txt`
 - start with `docs/COLAB_DEPLOYMENT.md`
-- configure `configs/colab_gpu_a0.yaml`, `configs/colab_gpu_a1.yaml`, and `configs/colab_gpu_a5.yaml`
+- use `scripts/materialize_colab_bundle.py` or configure `configs/colab_gpu_a0.yaml`, `configs/colab_gpu_a1.yaml`, `configs/colab_gpu_a1_student_eval.yaml`, and `configs/colab_gpu_a5.yaml`
 
 ## Repo map
 
 - `configs/` stage configs, shared defaults, fixture configs, and Colab configs
 - `data/` fixture prompt packs, eval samples, and raw-bank examples
+- `notebooks/` notebook-first Colab experimentation engine
 - `scripts/` manifest builders, generation/training entry points, evaluation, comparison, and doc automation
 - `tests/` unit coverage for the validation spine and deployment helpers
 - `docs/` runbooks, deployment guides, generated indexes, and architecture notes
@@ -54,6 +65,7 @@ Use the Colab GPU path for the first real deployment lane:
 ## Key docs
 
 - `docs/RUNBOOK.md`
+- [`notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb)
 - `docs/ARCHITECTURE.md`
 - `docs/REAL_RUNS.md`
 - `docs/COLAB_DEPLOYMENT.md`

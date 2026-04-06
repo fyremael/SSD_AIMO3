@@ -1,9 +1,10 @@
 {
   "docs_count": 9,
-  "config_count": 17,
-  "script_count": 17,
-  "test_count": 16,
+  "config_count": 18,
+  "script_count": 18,
+  "test_count": 18,
   "fixture_data_count": 5,
+  "notebook_count": 1,
   "workflow_count": 1,
   "docs_files": [
     "docs/ARCHITECTURE.md",
@@ -15,6 +16,9 @@
     "docs/RUNBOOK.md",
     "docs/STATUS.md",
     "docs/TROPICAL_EXTENSION.md"
+  ],
+  "notebook_files": [
+    "notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb"
   ],
   "config_catalog": [
     {
@@ -64,6 +68,12 @@
       "name": "colab_gpu_a1",
       "stage": null,
       "objective": "Colab GPU self-distillation generation and training config."
+    },
+    {
+      "path": "configs/colab_gpu_a1_student_eval.yaml",
+      "name": "colab_gpu_a1_student_eval",
+      "stage": "A1_eval",
+      "objective": "evaluate the trained A1 student adapter under the A0-style evaluation stack"
     },
     {
       "path": "configs/colab_gpu_a5.yaml",
@@ -160,6 +170,10 @@
     {
       "path": "scripts/generate_self_samples.py",
       "description": "Generate self-sampled math traces or synthesize dry-run equivalents"
+    },
+    {
+      "path": "scripts/materialize_colab_bundle.py",
+      "description": "Materialize a Colab experiment config bundle from notebook parameters"
     },
     {
       "path": "scripts/mock_external_generator.py",
