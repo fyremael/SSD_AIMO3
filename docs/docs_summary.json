@@ -1,0 +1,199 @@
+{
+  "docs_count": 9,
+  "config_count": 17,
+  "script_count": 17,
+  "test_count": 16,
+  "fixture_data_count": 5,
+  "workflow_count": 1,
+  "docs_files": [
+    "docs/ARCHITECTURE.md",
+    "docs/AUTOMATION.md",
+    "docs/COLAB_DEPLOYMENT.md",
+    "docs/FIXTURE_LADDER.md",
+    "docs/INDEX.md",
+    "docs/REAL_RUNS.md",
+    "docs/RUNBOOK.md",
+    "docs/STATUS.md",
+    "docs/TROPICAL_EXTENSION.md"
+  ],
+  "config_catalog": [
+    {
+      "path": "configs/a0_frozen_baseline.yaml",
+      "name": "a0_frozen_baseline",
+      "stage": "A0",
+      "objective": "strongest fair frozen-model baseline under matched inference budgets"
+    },
+    {
+      "path": "configs/a1_naive_ssd.yaml",
+      "name": "a1_naive_ssd",
+      "stage": "A1",
+      "objective": "plain self-distillation on self-generated math traces"
+    },
+    {
+      "path": "configs/a2_ssd_plus_selection.yaml",
+      "name": "a2_ssd_plus_selection",
+      "stage": "A2",
+      "objective": "SSD with self-consistency selection"
+    },
+    {
+      "path": "configs/a3_ssd_plus_weak_filtering.yaml",
+      "name": "a3_ssd_plus_weak_filtering",
+      "stage": "A3",
+      "objective": "SSD with weak filtering of obviously broken self-samples"
+    },
+    {
+      "path": "configs/a4_ssd_plus_light_verifier.yaml",
+      "name": "a4_ssd_plus_light_verifier",
+      "stage": "A4",
+      "objective": "SSD with lightweight verifier signals"
+    },
+    {
+      "path": "configs/a5_tropical_rerank.yaml",
+      "name": "a5_tropical_rerank",
+      "stage": "A5",
+      "objective": "offline tropical reranking over already-generated math traces"
+    },
+    {
+      "path": "configs/colab_gpu_a0.yaml",
+      "name": "colab_gpu_a0",
+      "stage": null,
+      "objective": "Colab GPU baseline evaluation config."
+    },
+    {
+      "path": "configs/colab_gpu_a1.yaml",
+      "name": "colab_gpu_a1",
+      "stage": null,
+      "objective": "Colab GPU self-distillation generation and training config."
+    },
+    {
+      "path": "configs/colab_gpu_a5.yaml",
+      "name": "colab_gpu_a5",
+      "stage": null,
+      "objective": "Colab GPU tropical reranking config."
+    },
+    {
+      "path": "configs/colab_gpu_fixture_debug.yaml",
+      "name": "colab_gpu_fixture_debug",
+      "stage": null,
+      "objective": "Small-model Colab debug config for smoke testing the GPU lane."
+    },
+    {
+      "path": "configs/command_backend_example.yaml",
+      "name": "command_backend_example",
+      "stage": null,
+      "objective": "Example config showing command-backed generation and training launchers."
+    },
+    {
+      "path": "configs/compute_profiles.yaml",
+      "name": "compute_profiles",
+      "stage": null,
+      "objective": "Reusable small, medium, and large compute envelopes."
+    },
+    {
+      "path": "configs/fixture_a0.yaml",
+      "name": "fixture_a0",
+      "stage": null,
+      "objective": "Fixture-backed A0 config for local regression testing."
+    },
+    {
+      "path": "configs/fixture_a1.yaml",
+      "name": "fixture_a1",
+      "stage": null,
+      "objective": "Fixture-backed A1 config for local regression testing."
+    },
+    {
+      "path": "configs/fixture_a5.yaml",
+      "name": "fixture_a5",
+      "stage": null,
+      "objective": "Fixture-backed A5 config for local regression testing."
+    },
+    {
+      "path": "configs/global.yaml",
+      "name": "global",
+      "stage": null,
+      "objective": "validate SSD-style adaptation for exact-answer olympiad-style math"
+    },
+    {
+      "path": "configs/prompt_templates.yaml",
+      "name": "prompt_templates",
+      "stage": null,
+      "objective": "Reusable prompt template definitions."
+    }
+  ],
+  "script_catalog": [
+    {
+      "path": "scripts/aggregate_votes.py",
+      "description": "Aggregate extracted answers with majority vote"
+    },
+    {
+      "path": "scripts/build_problem_manifests.py",
+      "description": "Normalize raw problem data into prompt/eval/metadata JSONL manifests"
+    },
+    {
+      "path": "scripts/colab_hf_generate.py",
+      "description": "Generate JSONL completions with a Hugging Face causal LM on Colab GPU"
+    },
+    {
+      "path": "scripts/colab_runtime_probe.py",
+      "description": "Probe Colab runtime capabilities and emit a JSON summary"
+    },
+    {
+      "path": "scripts/colab_train_lora.py",
+      "description": "Run LoRA SFT on Colab GPU from a JSONL training dataset"
+    },
+    {
+      "path": "scripts/common.py",
+      "description": "Shared config resolution, JSONL I/O, and utility helpers used across the repo."
+    },
+    {
+      "path": "scripts/compare_eval_runs.py",
+      "description": "Compare two eval runs and emit paired win/loss/flip reports"
+    },
+    {
+      "path": "scripts/constraint_library.py",
+      "description": "Cheap auditable constraint checks and penalty scoring helpers for tropical reranking."
+    },
+    {
+      "path": "scripts/extract_answer.py",
+      "description": "Extract a canonical final integer answer from math traces"
+    },
+    {
+      "path": "scripts/generate_self_samples.py",
+      "description": "Generate self-sampled math traces or synthesize dry-run equivalents"
+    },
+    {
+      "path": "scripts/mock_external_generator.py",
+      "description": "Mock external JSONL generator backend for smoke tests"
+    },
+    {
+      "path": "scripts/mock_external_trainer.py",
+      "description": "Mock external training backend for smoke tests"
+    },
+    {
+      "path": "scripts/run_eval_math.py",
+      "description": "Run math evaluation with optional tropical reranking backend"
+    },
+    {
+      "path": "scripts/run_validation_ladder.py",
+      "description": "Run the A0/A1/A5 validation ladder and emit paired summaries"
+    },
+    {
+      "path": "scripts/train_ssd_math.py",
+      "description": "Build an SSD math SFT dataset package from self-generated traces"
+    },
+    {
+      "path": "scripts/tropical_rerank.py",
+      "description": "Apply tropical reranking to extracted math traces"
+    },
+    {
+      "path": "scripts/update_docs.py",
+      "description": "Generate repo index, status, and summary documentation artifacts."
+    }
+  ],
+  "workflow_catalog": [
+    {
+      "path": ".github/workflows/docs-sync.yml",
+      "name": "Docs Sync"
+    }
+  ]
+}

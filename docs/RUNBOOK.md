@@ -11,9 +11,9 @@ It assumes the program posture already fixed in `TASKS.md`:
 
 ## 1. Operating principle
 
-The SSD paper reports that a model can improve code generation by sampling its own raw outputs, fine-tuning on those samples with ordinary next-token loss, and then decoding with a separately chosen evaluation temperature. The paper reports large LiveCodeBench gains, including Qwen3-30B-Instruct moving from 42.4% to 55.3% pass@1 on LiveCodeBench v6, and frames the mechanism as reshaping the precision–exploration tradeoff in decoding. citeturn938483search0turn938483search4
+The SSD framing used here is straightforward: sample a model's own raw outputs, fine-tune on those self-generated traces with plain next-token loss, and then evaluate with a separately chosen decoding policy. The value of the method, in this repo, is not paper-faithful replication. The value is whether that adaptation step improves exact-answer math performance under a disciplined evaluation stack.
 
-AIMO3 is a different target. Kaggle’s overview describes olympiad-style math problems with integer answers, while the competition data page states there are 110 problems and each answer is a non-negative integer in `[0, 99999]`. That means our primary metric is exact final-answer accuracy, not broad reasoning plausibility. citeturn938483search1turn938483search3
+AIMO3 is a different target from code-generation benchmarks. The working assumption here is that the output surface is a non-negative integer answer in `[0, 99999]`, which makes exact final-answer accuracy much more important than general trace fluency.
 
 Because of that mismatch, we treat SSD as a **domain-adaptation primitive**. The method is useful only if it improves exact integer answers after fair tuning of prompting, answer extraction, and inference-time selection.
 
@@ -283,3 +283,8 @@ The repo now supports:
 - `scripts/build_problem_manifests.py` for normalizing raw datasets into JSONL manifests
 - `generation.backend: command_jsonl` for external inference backends
 - `training.launcher.command` for external trainer launchers
+
+## Documentation automation
+
+Generated docs are refreshed by `scripts/update_docs.py`.
+The repo also ships a GitHub Actions workflow at `.github/workflows/docs-sync.yml` that regenerates the documentation index and status pages on `main`, on demand, and on a weekly schedule.

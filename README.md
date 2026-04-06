@@ -2,7 +2,7 @@
 
 Validation harness for testing SSD-style self-distillation on AIMO-style exact-integer math evaluation.
 
-## What this repo does
+## What this repo is for
 
 - builds prompt, eval, and metadata manifests from raw source data
 - canonicalizes final-answer extraction
@@ -12,15 +12,19 @@ Validation harness for testing SSD-style self-distillation on AIMO-style exact-i
 - includes a replayable fixture ladder for regression testing
 - includes an initial Colab GPU deployment path for generation and LoRA training
 
-## Quick start
+## Main workflows
 
-Run the local fixture ladder:
+### 1. Local fixture ladder
+
+Use this to verify the full repo spine before touching real data:
 
 ```bash
 python scripts/run_validation_ladder.py --output-dir runs/fixture_ladder
 ```
 
-Prepare real problem manifests:
+### 2. Real data normalization
+
+Turn raw problem sources into the JSONL manifests used everywhere else:
 
 ```bash
 python scripts/build_problem_manifests.py \
@@ -31,17 +35,39 @@ python scripts/build_problem_manifests.py \
   --summary-json data/real_manifest_summary.json
 ```
 
-## Colab deployment
+### 3. Colab GPU deployment
 
-For the initial deployment lane, use Colab GPU:
+Use the Colab GPU path for the first real deployment lane:
 
 - install `requirements/colab-gpu.txt`
 - start with `docs/COLAB_DEPLOYMENT.md`
 - configure `configs/colab_gpu_a0.yaml`, `configs/colab_gpu_a1.yaml`, and `configs/colab_gpu_a5.yaml`
 
+## Repo map
+
+- `configs/` stage configs, shared defaults, fixture configs, and Colab configs
+- `data/` fixture prompt packs, eval samples, and raw-bank examples
+- `scripts/` manifest builders, generation/training entry points, evaluation, comparison, and doc automation
+- `tests/` unit coverage for the validation spine and deployment helpers
+- `docs/` runbooks, deployment guides, generated indexes, and architecture notes
+
 ## Key docs
 
 - `docs/RUNBOOK.md`
+- `docs/ARCHITECTURE.md`
 - `docs/REAL_RUNS.md`
 - `docs/COLAB_DEPLOYMENT.md`
 - `docs/FIXTURE_LADDER.md`
+- `docs/AUTOMATION.md`
+- `docs/INDEX.md`
+- `docs/STATUS.md`
+
+## Documentation automation
+
+Generated documentation can be refreshed locally with:
+
+```bash
+python scripts/update_docs.py
+```
+
+The repo also includes a GitHub Actions workflow that refreshes generated doc indexes and status pages automatically.
