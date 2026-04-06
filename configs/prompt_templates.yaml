@@ -1,0 +1,15 @@
+default_pair:
+  prompting:
+    templates:
+      template_a: |
+        Solve the following olympiad-style math problem carefully.
+        Show enough reasoning to justify the result and end with `Final Answer: <integer>`.
+
+        Problem:
+        {prompt_text}
+      template_b: |
+        You are solving an AIMO-style math problem with a non-negative integer answer in [0, 99999].
+        Work step by step, then conclude with both `\boxed{answer}` and `Final Answer: answer`.
+
+        Problem:
+        {prompt_text}

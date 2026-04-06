@@ -1,0 +1,13 @@
+inherits_from:
+  - a2_ssd_plus_selection.yaml
+
+experiment:
+  name: a3_ssd_plus_weak_filtering
+  stage: A3
+  objective: SSD with weak filtering of obviously broken self-samples
+
+filtering:
+  policy: weak_broken_trace_filter
+  require_extracted_answer: true
+  reject_conflicting_final_answers: true
+  reject_out_of_range_answers: true

@@ -1,0 +1,6 @@
+{"problem_id":"alg_lin_001","gold_answer":12,"topic":"algebra","difficulty":"medium","tags":["equations","linear"]}
+{"problem_id":"nt_mod_002","gold_answer":7,"topic":"number_theory","difficulty":"hard","tags":["modular","residues"]}
+{"problem_id":"comb_count_003","gold_answer":20,"topic":"combinatorics","difficulty":"hard","tags":["counting","cases"]}
+{"problem_id":"geo_area_004","gold_answer":14,"topic":"geometry","difficulty":"easy","tags":["area","rectangles"]}
+{"problem_id":"alg_series_005","gold_answer":9,"topic":"algebra","difficulty":"medium","tags":["series","sums"]}
+{"problem_id":"nt_div_006","gold_answer":3,"topic":"number_theory","difficulty":"medium","tags":["divisibility","remainders"]}

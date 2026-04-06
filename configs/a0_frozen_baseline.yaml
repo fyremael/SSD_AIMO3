@@ -1,0 +1,15 @@
+inherits_from:
+  - global.yaml
+  - compute_profiles.yaml#small
+  - prompt_templates.yaml#default_pair
+
+experiment:
+  name: a0_frozen_baseline
+  stage: A0
+  objective: strongest fair frozen-model baseline under matched inference budgets
+
+aggregation:
+  strategy: majority_vote
+
+inputs:
+  eval_input_jsonl: REPLACE_WITH_EVAL_GENERATIONS_OR_EXTRACTED_JSONL

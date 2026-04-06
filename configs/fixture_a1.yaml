@@ -1,0 +1,14 @@
+inherits_from:
+  - a1_naive_ssd.yaml
+
+model:
+  base_model_id: fixture-replay-student
+
+paths:
+  eval_manifest_jsonl: data/fixture_eval_samples_a1.jsonl
+  unlabeled_prompt_manifest_jsonl: data/fixture_unlabeled_prompts.jsonl
+  problem_metadata_jsonl: data/fixture_problem_metadata.jsonl
+
+inputs:
+  prompt_input_jsonl: data/fixture_unlabeled_prompts.jsonl
+  eval_input_jsonl: data/fixture_eval_samples_a1.jsonl

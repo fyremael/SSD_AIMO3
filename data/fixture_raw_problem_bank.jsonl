@@ -1,0 +1,6 @@
+{"problem_id":"alg_lin_001","prompt_text":"Solve for x: x + 5 = 17. Give the integer answer.","gold_answer":12,"topic":"algebra","difficulty":"medium","tags":["equations","linear"],"source":"fixture_raw_bank"}
+{"problem_id":"nt_mod_002","prompt_text":"What is the remainder when 79 is divided by 12? Give the integer answer.","gold_answer":7,"topic":"number_theory","difficulty":"hard","tags":["modular","residues"],"source":"fixture_raw_bank"}
+{"problem_id":"comb_count_003","prompt_text":"There are 4 choices for one item and 5 choices for another. How many ordered pairs are possible?","gold_answer":20,"topic":"combinatorics","difficulty":"hard","tags":["counting","cases"],"source":"fixture_raw_bank"}
+{"problem_id":"geo_area_004","prompt_text":"A rectangle has side lengths 2 and 7. What is its area?","gold_answer":14,"topic":"geometry","difficulty":"easy","tags":["area","rectangles"],"source":"fixture_raw_bank"}
+{"problem_id":"alg_series_005","prompt_text":"Compute 4 + 5. Give the integer answer.","gold_answer":9,"topic":"algebra","difficulty":"medium","tags":["series","sums"],"source":"fixture_raw_bank"}
+{"problem_id":"nt_div_006","prompt_text":"What is the remainder when 27 is divided by 4?","gold_answer":3,"topic":"number_theory","difficulty":"medium","tags":["divisibility","remainders"],"source":"fixture_raw_bank"}

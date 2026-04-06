@@ -1,0 +1,21 @@
+inherits_from:
+  - global.yaml
+  - compute_profiles.yaml#small
+  - prompt_templates.yaml#default_pair
+
+experiment:
+  name: a1_naive_ssd
+  stage: A1
+  objective: plain self-distillation on self-generated math traces
+
+filtering:
+  policy: minimal
+  require_extracted_answer: true
+
+training:
+  output_dir_name: a1_student_checkpoint
+
+inputs:
+  prompt_input_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+  self_sample_input_jsonl: REPLACE_WITH_GENERATIONS_JSONL
+  eval_input_jsonl: REPLACE_WITH_EVAL_GENERATIONS_OR_EXTRACTED_JSONL

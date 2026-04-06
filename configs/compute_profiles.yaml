@@ -1,0 +1,35 @@
+small:
+  compute:
+    profile: small
+    num_gpus: 1
+    gpu_memory_gb: 24
+  generation:
+    max_new_tokens: 768
+    num_return_sequences_eval: 4
+  training:
+    per_device_train_batch_size: 1
+    gradient_accumulation_steps: 16
+
+medium:
+  compute:
+    profile: medium
+    num_gpus: 2
+    gpu_memory_gb: 48
+  generation:
+    max_new_tokens: 1024
+    num_return_sequences_eval: 8
+  training:
+    per_device_train_batch_size: 2
+    gradient_accumulation_steps: 16
+
+large:
+  compute:
+    profile: large
+    num_gpus: 4
+    gpu_memory_gb: 80
+  generation:
+    max_new_tokens: 1536
+    num_return_sequences_eval: 16
+  training:
+    per_device_train_batch_size: 4
+    gradient_accumulation_steps: 8

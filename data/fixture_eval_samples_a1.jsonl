@@ -1,0 +1,24 @@
+{"problem_id":"alg_lin_001","sample_index":0,"template_name":"template_a","gold_answer":12,"generation_text":"Solve cleanly. Final Answer: 12."}
+{"problem_id":"alg_lin_001","sample_index":1,"template_name":"template_a","gold_answer":12,"generation_text":"We double-check and conclude \\boxed{12}."}
+{"problem_id":"alg_lin_001","sample_index":2,"template_name":"template_a","gold_answer":12,"generation_text":"A stray branch says Final Answer: 10."}
+{"problem_id":"alg_lin_001","sample_index":3,"template_name":"template_a","gold_answer":12,"generation_text":"No conclusive integer answer."}
+{"problem_id":"nt_mod_002","sample_index":0,"template_name":"template_a","gold_answer":7,"generation_text":"Clean modular reasoning. Final Answer: 7."}
+{"problem_id":"nt_mod_002","sample_index":1,"template_name":"template_a","gold_answer":7,"generation_text":"We verify and conclude \\boxed{7}."}
+{"problem_id":"nt_mod_002","sample_index":2,"template_name":"template_a","gold_answer":7,"generation_text":"A stray branch says Final Answer: 8."}
+{"problem_id":"nt_mod_002","sample_index":3,"template_name":"template_a","gold_answer":7,"generation_text":"No conclusive integer answer."}
+{"problem_id":"comb_count_003","sample_index":0,"template_name":"template_a","gold_answer":20,"generation_text":"We compute 4*5=20. Final Answer: 20."}
+{"problem_id":"comb_count_003","sample_index":1,"template_name":"template_a","gold_answer":20,"generation_text":"We compute 4*5=21. Final Answer: 21. Therefore \\boxed{21}."}
+{"problem_id":"comb_count_003","sample_index":2,"template_name":"template_a","gold_answer":20,"generation_text":"We compute 4*5=21. Final Answer: 21."}
+{"problem_id":"comb_count_003","sample_index":3,"template_name":"template_a","gold_answer":20,"generation_text":"No conclusive integer answer."}
+{"problem_id":"geo_area_004","sample_index":0,"template_name":"template_a","gold_answer":14,"generation_text":"Area is 14. Final Answer: 14."}
+{"problem_id":"geo_area_004","sample_index":1,"template_name":"template_a","gold_answer":14,"generation_text":"Therefore \\boxed{14}."}
+{"problem_id":"geo_area_004","sample_index":2,"template_name":"template_a","gold_answer":14,"generation_text":"A noisy path says Final Answer: 12."}
+{"problem_id":"geo_area_004","sample_index":3,"template_name":"template_a","gold_answer":14,"generation_text":"No conclusive integer answer."}
+{"problem_id":"alg_series_005","sample_index":0,"template_name":"template_a","gold_answer":9,"generation_text":"Careful summation gives Final Answer: 9."}
+{"problem_id":"alg_series_005","sample_index":1,"template_name":"template_a","gold_answer":9,"generation_text":"Therefore \\boxed{9}."}
+{"problem_id":"alg_series_005","sample_index":2,"template_name":"template_a","gold_answer":9,"generation_text":"A stray branch says Final Answer: 8."}
+{"problem_id":"alg_series_005","sample_index":3,"template_name":"template_a","gold_answer":9,"generation_text":"No conclusive integer answer."}
+{"problem_id":"nt_div_006","sample_index":0,"template_name":"template_a","gold_answer":3,"generation_text":"Divisibility branch. Final Answer: 4."}
+{"problem_id":"nt_div_006","sample_index":1,"template_name":"template_a","gold_answer":3,"generation_text":"Therefore \\boxed{4}."}
+{"problem_id":"nt_div_006","sample_index":2,"template_name":"template_a","gold_answer":3,"generation_text":"Cleaner note suggests Final Answer: 3."}
+{"problem_id":"nt_div_006","sample_index":3,"template_name":"template_a","gold_answer":3,"generation_text":"No conclusive integer answer."}

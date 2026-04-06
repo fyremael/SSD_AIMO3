@@ -1,0 +1,14 @@
+inherits_from:
+  - a1_naive_ssd.yaml
+
+experiment:
+  name: a2_ssd_plus_selection
+  stage: A2
+  objective: SSD with self-consistency selection
+
+generation:
+  num_return_sequences_eval: 8
+
+aggregation:
+  strategy: majority_vote
+  selection_policy: self_consistency

@@ -1,0 +1,26 @@
+inherits_from:
+  - a3_ssd_plus_weak_filtering.yaml
+
+experiment:
+  name: a4_ssd_plus_light_verifier
+  stage: A4
+  objective: SSD with lightweight verifier signals
+
+constraints:
+  extraction_failure_penalty: 100.0
+  contradiction_penalty: 8.0
+  arithmetic_failure_penalty: 4.0
+  modular_failure_penalty: 4.0
+  missing_structure_penalty: 1.5
+  complexity_penalty_per_200_chars: 0.5
+  overlong_threshold_chars: 1600
+  reward_boxed_answer: -0.5
+  reward_final_answer_phrase: -0.5
+  contradiction_patterns:
+    - '(?i)final\s+answer\s*[:=]\s*([0-9]{1,10})'
+    - '\\boxed\{\s*([0-9]{1,10})\s*\}'
+  enabled_checks:
+    arithmetic_equalities: true
+    modular_claims: true
+    parity_conflicts: true
+    repeated_final_answer_conflicts: true

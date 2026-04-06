@@ -1,0 +1,15 @@
+inherits_from:
+  - a5_tropical_rerank.yaml
+
+model:
+  base_model_id: REPLACE_WITH_HF_MODEL_ID
+  trust_remote_code: false
+
+paths:
+  eval_manifest_jsonl: REPLACE_WITH_EVAL_PROMPTS_JSONL
+  unlabeled_prompt_manifest_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+  problem_metadata_jsonl: REPLACE_WITH_PROBLEM_METADATA_JSONL
+
+inputs:
+  tropical_input_jsonl: REPLACE_WITH_EVAL_GENERATIONS_JSONL
+  eval_input_jsonl: REPLACE_WITH_EVAL_GENERATIONS_JSONL

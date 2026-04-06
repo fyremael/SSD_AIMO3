@@ -1,0 +1,63 @@
+experiment:
+  owner: Grand Challenge Technologies
+  objective: validate SSD-style adaptation for exact-answer olympiad-style math
+  report_gate: unreviewed
+
+model:
+  base_model_id: REPLACE_WITH_BASE_MODEL_ID
+  tokenizer_id: null
+  trust_remote_code: false
+
+paths:
+  eval_manifest_jsonl: REPLACE_WITH_EVAL_MANIFEST_JSONL
+  unlabeled_prompt_manifest_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+  output_root: runs
+
+prompting:
+  active_template_names:
+    - template_a
+    - template_b
+
+sampling:
+  random_seed: 17
+
+generation:
+  backend: replay_or_stub
+  command: null
+  command_workdir: null
+  input_text_field: prompt_text
+  output_text_field: generation_text
+  do_sample: true
+  max_new_tokens: 1024
+  eval_temperature: 0.6
+  eval_top_p: 0.95
+  eval_top_k: 50
+  num_return_sequences_train: 1
+  num_return_sequences_eval: 8
+
+aggregation:
+  strategy: majority_vote
+
+extraction:
+  policy: overwrite_all
+  max_answer: 99999
+
+filtering:
+  policy: minimal
+
+training:
+  mode: sft
+  max_seq_length: 4096
+  num_train_epochs: 1
+  learning_rate: 2.0e-5
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 16
+  save_dataset_only: true
+  launcher:
+    enabled: false
+    command: null
+    workdir: null
+
+dry_run:
+  synthetic_answer_modulus: 97
+  max_examples: 16

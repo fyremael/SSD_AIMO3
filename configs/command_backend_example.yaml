@@ -1,0 +1,24 @@
+inherits_from:
+  - a1_naive_ssd.yaml
+
+model:
+  base_model_id: REPLACE_WITH_REAL_MODEL_ID
+
+paths:
+  unlabeled_prompt_manifest_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+  eval_manifest_jsonl: REPLACE_WITH_EVAL_GENERATIONS_OR_MANIFEST_JSONL
+  problem_metadata_jsonl: REPLACE_WITH_PROBLEM_METADATA_JSONL
+
+inputs:
+  prompt_input_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+  eval_input_jsonl: REPLACE_WITH_EVAL_GENERATIONS_OR_MANIFEST_JSONL
+
+generation:
+  backend: command_jsonl
+  command: '"{python_executable}" scripts/mock_external_generator.py --input-jsonl "{input_jsonl}" --output-jsonl "{output_jsonl}" --output-field "{generation_field}"'
+
+training:
+  save_dataset_only: false
+  launcher:
+    enabled: true
+    command: '"{python_executable}" scripts/mock_external_trainer.py --dataset-path "{dataset_path}" --output-dir "{output_dir}"'

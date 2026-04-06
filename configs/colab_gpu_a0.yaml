@@ -1,0 +1,18 @@
+inherits_from:
+  - a0_frozen_baseline.yaml
+
+model:
+  base_model_id: REPLACE_WITH_HF_MODEL_ID
+  trust_remote_code: false
+
+paths:
+  eval_manifest_jsonl: REPLACE_WITH_EVAL_PROMPTS_JSONL
+  unlabeled_prompt_manifest_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+  problem_metadata_jsonl: REPLACE_WITH_PROBLEM_METADATA_JSONL
+
+inputs:
+  eval_input_jsonl: REPLACE_WITH_EVAL_GENERATIONS_JSONL
+
+generation:
+  backend: command_jsonl
+  command: '"{python_executable}" scripts/colab_hf_generate.py --input-jsonl "{input_jsonl}" --output-jsonl "{output_jsonl}" --summary-json "{output_dir}/hf_generate_summary.json" --model-id "{model_id}" --prompt-field rendered_prompt_text --output-field "{generation_field}" --batch-size 2 --max-new-tokens 256 --temperature 0.6 --top-p 0.95 --top-k 50 --do-sample --dtype auto --quantization 4bit'

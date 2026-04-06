@@ -1,0 +1,61 @@
+inherits_from:
+  - global.yaml
+  - compute_profiles.yaml#small
+  - prompt_templates.yaml#default_pair
+
+experiment:
+  name: a5_tropical_rerank
+  stage: A5
+  objective: offline tropical reranking over already-generated math traces
+
+model:
+  base_model_id: REPLACE_WITH_BASE_MODEL_ID
+  trust_remote_code: false
+
+paths:
+  eval_manifest_jsonl: REPLACE_WITH_EVAL_MANIFEST_JSONL
+  unlabeled_prompt_manifest_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+
+prompting:
+  template_name: template_a
+
+sampling:
+  random_seed: 17
+
+generation:
+  do_sample: true
+  num_return_sequences_eval: 8
+  eval_temperature: 0.6
+  eval_top_p: 0.95
+  eval_top_k: 50
+
+aggregation:
+  strategy: tropical_rerank
+  answer_score:
+    support_bonus_weight: 0.75
+    mean_penalty_weight: 0.20
+    min_penalty_weight: 1.0
+
+constraints:
+  extraction_failure_penalty: 100.0
+  contradiction_penalty: 8.0
+  arithmetic_failure_penalty: 4.0
+  modular_failure_penalty: 4.0
+  missing_structure_penalty: 1.5
+  complexity_penalty_per_200_chars: 0.5
+  overlong_threshold_chars: 1600
+  reward_boxed_answer: -0.5
+  reward_final_answer_phrase: -0.5
+
+  contradiction_patterns:
+    - '(?i)final\s+answer\s*[:=]\s*([0-9]{1,10})'
+    - '\\boxed\{\s*([0-9]{1,10})\s*\}'
+
+  enabled_checks:
+    arithmetic_equalities: true
+    modular_claims: true
+    parity_conflicts: true
+    repeated_final_answer_conflicts: true
+
+inputs:
+  tropical_input_jsonl: REPLACE_WITH_EXTRACTED_OR_GENERATIONS_JSONL

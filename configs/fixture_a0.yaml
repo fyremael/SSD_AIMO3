@@ -1,0 +1,13 @@
+inherits_from:
+  - a0_frozen_baseline.yaml
+
+model:
+  base_model_id: fixture-replay-baseline
+
+paths:
+  eval_manifest_jsonl: data/fixture_eval_samples_a0.jsonl
+  unlabeled_prompt_manifest_jsonl: data/fixture_unlabeled_prompts.jsonl
+  problem_metadata_jsonl: data/fixture_problem_metadata.jsonl
+
+inputs:
+  eval_input_jsonl: data/fixture_eval_samples_a0.jsonl

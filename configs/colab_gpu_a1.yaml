@@ -1,0 +1,25 @@
+inherits_from:
+  - a1_naive_ssd.yaml
+
+model:
+  base_model_id: REPLACE_WITH_HF_MODEL_ID
+  trust_remote_code: false
+
+paths:
+  eval_manifest_jsonl: REPLACE_WITH_EVAL_PROMPTS_JSONL
+  unlabeled_prompt_manifest_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+  problem_metadata_jsonl: REPLACE_WITH_PROBLEM_METADATA_JSONL
+
+inputs:
+  prompt_input_jsonl: REPLACE_WITH_UNLABELED_PROMPTS_JSONL
+  eval_input_jsonl: REPLACE_WITH_EVAL_GENERATIONS_JSONL
+
+generation:
+  backend: command_jsonl
+  command: '"{python_executable}" scripts/colab_hf_generate.py --input-jsonl "{input_jsonl}" --output-jsonl "{output_jsonl}" --summary-json "{output_dir}/hf_generate_summary.json" --model-id "{model_id}" --prompt-field rendered_prompt_text --output-field "{generation_field}" --batch-size 2 --max-new-tokens 256 --temperature 0.7 --top-p 0.95 --top-k 50 --do-sample --dtype auto --quantization 4bit'
+
+training:
+  save_dataset_only: false
+  launcher:
+    enabled: true
+    command: '"{python_executable}" scripts/colab_train_lora.py --dataset-path "{dataset_path}" --output-dir "{output_dir}/adapter" --summary-json "{output_dir}/adapter_summary.json" --model-id "{model_id}" --max-seq-length {max_seq_length} --learning-rate {learning_rate} --num-train-epochs {num_train_epochs} --per-device-train-batch-size {per_device_train_batch_size} --gradient-accumulation-steps {gradient_accumulation_steps} --dtype auto --quantization 4bit'

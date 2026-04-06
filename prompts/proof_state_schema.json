@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grandchallenge.local/schemas/proof_state_schema.json",
+  "title": "ProofStateRecord",
+  "type": "object",
+  "required": [
+    "problem_id",
+    "sample_index",
+    "trace_text",
+    "constraint_checks",
+    "tropical_score"
+  ],
+  "properties": {
+    "problem_id": {
+      "type": "string"
+    },
+    "sample_index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "template_name": {
+      "type": ["string", "null"]
+    },
+    "trace_text": {
+      "type": "string"
+    },
+    "extracted_answer": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 99999
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step_id", "raw_text"],
+        "properties": {
+          "step_id": {"type": "integer", "minimum": 0},
+          "raw_text": {"type": "string"},
+          "expression": {"type": ["string", "null"]},
+          "claimed_relation": {"type": ["string", "null"]},
+          "justification_type": {"type": ["string", "null"]},
+          "local_checks_passed": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "local_checks_failed": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "num_lines": {"type": "integer", "minimum": 0},
+        "num_equations": {"type": "integer", "minimum": 0},
+        "has_boxed_answer": {"type": "boolean"},
+        "has_final_answer_phrase": {"type": "boolean"},
+        "token_estimate": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "constraint_checks": {
+      "type": "object",
+      "required": [
+        "extraction_status",
+        "num_arithmetic_failures",
+        "num_contradictions",
+        "num_modular_claims_checked"
+      ],
+      "properties": {
+        "extraction_status": {"type": "string"},
+        "num_arithmetic_failures": {"type": "integer", "minimum": 0},
+        "num_contradictions": {"type": "integer", "minimum": 0},
+        "num_modular_claims_checked": {"type": "integer", "minimum": 0},
+        "num_modular_failures": {"type": "integer", "minimum": 0},
+        "notes": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "tropical_score": {
+      "type": "object",
+      "required": ["total_penalty"],
+      "properties": {
+        "total_penalty": {"type": "number"},
+        "extraction_penalty": {"type": "number"},
+        "contradiction_penalty": {"type": "number"},
+        "arithmetic_penalty": {"type": "number"},
+        "structure_penalty": {"type": "number"},
+        "complexity_penalty": {"type": "number"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
