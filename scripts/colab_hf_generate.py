@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Mapping, Sequence
 
 from common import read_jsonl, write_json, write_jsonl
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -169,7 +170,32 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    run_generation(args)
+    output_dir = Path(args.summary_json).resolve().parent if args.summary_json else Path(args.output_jsonl).resolve().parent
+    with wandb_run_context(
+        config=None,
+        output_dir=output_dir,
+        script_name="colab_hf_generate.py",
+        job_type="hf_generation_backend",
+        extra_config={
+            "model_id": args.model_id,
+            "tokenizer_id": args.tokenizer_id,
+            "adapter_path": args.adapter_path,
+            "batch_size": args.batch_size,
+            "quantization": args.quantization,
+            "dtype": args.dtype,
+        },
+    ) as wandb_session:
+        summary = run_generation(args)
+        wandb_session.log_metrics(summary, prefix="hf_generation")
+        wandb_session.update_summary(summary, prefix="hf_generation")
+        wandb_session.log_output_artifact(
+            output_dir=output_dir,
+            candidate_files=[
+                Path(args.summary_json).name if args.summary_json else "",
+            ],
+            artifact_type="hf_generation_outputs",
+            metadata=summary,
+        )
 
 
 if __name__ == "__main__":

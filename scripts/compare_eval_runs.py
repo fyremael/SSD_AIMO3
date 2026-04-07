@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from common import ensure_parent, read_json, read_jsonl, write_json, write_jsonl
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -388,37 +389,77 @@ def main() -> None:
     args = build_parser().parse_args()
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    with wandb_run_context(
+        config=None,
+        output_dir=output_dir,
+        script_name="compare_eval_runs.py",
+        job_type="paired_comparison",
+        extra_config={
+            "run_a_dir": str(Path(args.run_a_dir).resolve()),
+            "run_b_dir": str(Path(args.run_b_dir).resolve()),
+            "run_a_label": args.run_a_label,
+            "run_b_label": args.run_b_label,
+            "metadata_jsonl": str(Path(args.metadata_jsonl).resolve()) if args.metadata_jsonl else None,
+        },
+    ) as wandb_session:
+        run_a_metrics, run_a_records, run_a_backend = load_run_artifacts(args.run_a_dir)
+        run_b_metrics, run_b_records, run_b_backend = load_run_artifacts(args.run_b_dir)
+        run_a_label = args.run_a_label or run_a_backend
+        run_b_label = args.run_b_label or run_b_backend
+        metadata_index = load_metadata_index(args.metadata_jsonl)
 
-    run_a_metrics, run_a_records, run_a_backend = load_run_artifacts(args.run_a_dir)
-    run_b_metrics, run_b_records, run_b_backend = load_run_artifacts(args.run_b_dir)
-    run_a_label = args.run_a_label or run_a_backend
-    run_b_label = args.run_b_label or run_b_backend
-    metadata_index = load_metadata_index(args.metadata_jsonl)
+        summary, comparisons = compare_runs(
+            run_a_records,
+            run_b_records,
+            run_a_label=run_a_label,
+            run_b_label=run_b_label,
+            metadata_index=metadata_index,
+        )
 
-    summary, comparisons = compare_runs(
-        run_a_records,
-        run_b_records,
-        run_a_label=run_a_label,
-        run_b_label=run_b_label,
-        metadata_index=metadata_index,
-    )
+        manifest = {
+            "script": "compare_eval_runs.py",
+            "run_a_dir": str(Path(args.run_a_dir).resolve()),
+            "run_b_dir": str(Path(args.run_b_dir).resolve()),
+            "run_a_label": run_a_label,
+            "run_b_label": run_b_label,
+            "run_a_metrics": run_a_metrics,
+            "run_b_metrics": run_b_metrics,
+            "metadata_jsonl": str(Path(args.metadata_jsonl).resolve()) if args.metadata_jsonl else None,
+        }
 
-    manifest = {
-        "script": "compare_eval_runs.py",
-        "run_a_dir": str(Path(args.run_a_dir).resolve()),
-        "run_b_dir": str(Path(args.run_b_dir).resolve()),
-        "run_a_label": run_a_label,
-        "run_b_label": run_b_label,
-        "run_a_metrics": run_a_metrics,
-        "run_b_metrics": run_b_metrics,
-        "metadata_jsonl": str(Path(args.metadata_jsonl).resolve()) if args.metadata_jsonl else None,
-    }
+        write_json(output_dir / "comparison_summary.json", summary)
+        write_jsonl(output_dir / "paired_problem_comparison.jsonl", comparisons)
+        write_csv(output_dir / "paired_problem_comparison.csv", comparisons)
+        (output_dir / "comparison_report.md").write_text(render_markdown_report(summary, comparisons), encoding="utf-8")
+        write_json(output_dir / "comparison_manifest.json", manifest)
 
-    write_json(output_dir / "comparison_summary.json", summary)
-    write_jsonl(output_dir / "paired_problem_comparison.jsonl", comparisons)
-    write_csv(output_dir / "paired_problem_comparison.csv", comparisons)
-    (output_dir / "comparison_report.md").write_text(render_markdown_report(summary, comparisons), encoding="utf-8")
-    write_json(output_dir / "comparison_manifest.json", manifest)
+        wandb_session.log_metrics(summary, prefix="comparison")
+        wandb_session.update_summary(
+            {
+                "run_a_label": run_a_label,
+                "run_b_label": run_b_label,
+                "num_comparisons": len(comparisons),
+                "discordant_pairs": summary.get("discordant_pairs"),
+                "net_gain_b_minus_a": summary.get("net_gain_b_minus_a"),
+                "paired_sign_test_pvalue_two_sided": summary.get("paired_sign_test_pvalue_two_sided"),
+            },
+            prefix="comparison",
+        )
+        wandb_session.log_output_artifact(
+            output_dir=output_dir,
+            candidate_files=[
+                "comparison_summary.json",
+                "comparison_report.md",
+                "comparison_manifest.json",
+                "paired_problem_comparison.csv",
+            ],
+            artifact_type="comparison_outputs",
+            metadata={
+                "run_a_label": run_a_label,
+                "run_b_label": run_b_label,
+                "num_comparisons": len(comparisons),
+            },
+        )
 
 
 if __name__ == "__main__":

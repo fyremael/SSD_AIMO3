@@ -19,6 +19,7 @@ It now defaults to a **zero-edit starter preset**:
 
 - run the notebook unchanged for a fixture-backed end-to-end starter pass
 - switch `EXPERIMENT_MODE` to `real` only when you want to supply your own model and manifests
+- authenticate W&B automatically from the `WANDB_API_KEY` Colab secret and group child runs under the notebook session
 
 Reason:
 
@@ -50,6 +51,17 @@ Colab already includes PyTorch in most GPU runtimes, so the repo dependency file
 ```bash
 pip install -r requirements/colab-gpu.txt
 ```
+
+## 2a. Configure W&B secret
+
+For the notebook-driven path, add a Colab secret named `WANDB_API_KEY`.
+
+The notebook now:
+
+- reads that secret directly from Colab secrets
+- runs `wandb.login(...)` automatically
+- exports grouped `SSD_AIMO3_WANDB_*` env vars so subprocess scripts log under the same session family
+- keeps bulky JSONL traces local while uploading compact metrics/manifests/artifacts
 
 ## 3. Normalize your raw problem source
 
@@ -117,6 +129,7 @@ python scripts/generate_self_samples.py \
 ```
 
 This calls `scripts/colab_hf_generate.py` through the repo's `command_jsonl` interface.
+With notebook-driven W&B enabled, both the higher-level generation script and the backend generator emit grouped telemetry.
 
 ## 6. Package and launch A1 LoRA training
 
@@ -134,6 +147,8 @@ This creates:
 - `training_audit.jsonl`
 - `training_plan.json`
 - `adapter/` with the LoRA adapter when training succeeds
+
+With notebook-driven W&B enabled, the dataset-packaging script and backend trainer both log compact metrics and output artifacts.
 
 ## 7. Produce eval generations and score them
 

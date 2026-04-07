@@ -12,6 +12,7 @@ Validation harness for testing SSD-style self-distillation on AIMO-style exact-i
 - includes a replayable fixture ladder for regression testing
 - includes an initial Colab GPU deployment path for generation and LoRA training
 - includes a notebook-first Colab experimentation engine aimed at thesis validation, not demo optimization
+- includes grouped Weights & Biases logging for Colab instrumentation, authenticated from Colab secrets
 
 ## Main workflows
 
@@ -44,6 +45,7 @@ Use the notebook when the goal is to methodically validate or invalidate the the
 - run it as-is for a guaranteed self-contained fixture-backed starter pass
 - switch `EXPERIMENT_MODE` from `\"starter\"` to `\"real\"` when you are ready to plug in a real model and corpus
 - let it clone the repo, install the GPU stack, and normalize manifests if needed
+- let it authenticate W&B from the `WANDB_API_KEY` Colab secret and group script runs under one notebook session
 - use the paired summaries before changing prompts or budgets
 
 ### 4. Colab GPU deployment

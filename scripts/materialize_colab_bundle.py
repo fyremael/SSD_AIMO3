@@ -7,6 +7,7 @@ from typing import Any, Dict, Mapping, Optional
 import yaml
 
 from common import deep_merge, resolve_config_path, write_json
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -109,33 +110,76 @@ def main() -> None:
     args = build_parser().parse_args()
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    overrides = build_overrides(
-        model_id=args.model_id,
-        prompt_manifest_jsonl=args.prompt_manifest_jsonl,
-        eval_prompt_manifest_jsonl=args.eval_prompt_manifest_jsonl,
-        problem_metadata_jsonl=args.problem_metadata_jsonl,
-        student_adapter_path=args.student_adapter_path,
-    )
-
-    materialize_config(base_config_path=args.a0_base_config, output_path=output_dir / "a0.yaml", overrides=overrides)
-    materialize_config(base_config_path=args.a1_base_config, output_path=output_dir / "a1.yaml", overrides=overrides)
-    materialize_config(
-        base_config_path=args.a1_student_base_config,
-        output_path=output_dir / "a1_student_eval.yaml",
-        overrides=overrides,
-    )
-    materialize_config(base_config_path=args.a5_base_config, output_path=output_dir / "a5.yaml", overrides=overrides)
-
-    manifest = build_bundle_manifest(
+    with wandb_run_context(
+        config=None,
         output_dir=output_dir,
-        model_id=args.model_id,
-        prompt_manifest_jsonl=args.prompt_manifest_jsonl,
-        eval_prompt_manifest_jsonl=args.eval_prompt_manifest_jsonl,
-        problem_metadata_jsonl=args.problem_metadata_jsonl,
-        student_adapter_path=args.student_adapter_path,
-    )
-    write_json(output_dir / "bundle_manifest.json", manifest)
+        script_name="materialize_colab_bundle.py",
+        job_type="bundle_materialization",
+        extra_config={
+            "model_id": args.model_id,
+            "prompt_manifest_jsonl": args.prompt_manifest_jsonl,
+            "eval_prompt_manifest_jsonl": args.eval_prompt_manifest_jsonl,
+            "problem_metadata_jsonl": args.problem_metadata_jsonl,
+            "student_adapter_path": args.student_adapter_path,
+        },
+    ) as wandb_session:
+        overrides = build_overrides(
+            model_id=args.model_id,
+            prompt_manifest_jsonl=args.prompt_manifest_jsonl,
+            eval_prompt_manifest_jsonl=args.eval_prompt_manifest_jsonl,
+            problem_metadata_jsonl=args.problem_metadata_jsonl,
+            student_adapter_path=args.student_adapter_path,
+        )
+
+        materialize_config(base_config_path=args.a0_base_config, output_path=output_dir / "a0.yaml", overrides=overrides)
+        materialize_config(base_config_path=args.a1_base_config, output_path=output_dir / "a1.yaml", overrides=overrides)
+        materialize_config(
+            base_config_path=args.a1_student_base_config,
+            output_path=output_dir / "a1_student_eval.yaml",
+            overrides=overrides,
+        )
+        materialize_config(base_config_path=args.a5_base_config, output_path=output_dir / "a5.yaml", overrides=overrides)
+
+        manifest = build_bundle_manifest(
+            output_dir=output_dir,
+            model_id=args.model_id,
+            prompt_manifest_jsonl=args.prompt_manifest_jsonl,
+            eval_prompt_manifest_jsonl=args.eval_prompt_manifest_jsonl,
+            problem_metadata_jsonl=args.problem_metadata_jsonl,
+            student_adapter_path=args.student_adapter_path,
+        )
+        write_json(output_dir / "bundle_manifest.json", manifest)
+
+        wandb_session.log_metrics(
+            {
+                "num_materialized_configs": len(manifest["materialized_configs"]),
+                "num_recommended_run_dirs": len(manifest["recommended_run_dirs"]),
+            },
+            prefix="bundle",
+        )
+        wandb_session.update_summary(
+            {
+                "model_id": args.model_id,
+                "student_adapter_path": args.student_adapter_path,
+                "num_materialized_configs": len(manifest["materialized_configs"]),
+            },
+            prefix="bundle",
+        )
+        wandb_session.log_output_artifact(
+            output_dir=output_dir,
+            candidate_files=[
+                "bundle_manifest.json",
+                "a0.yaml",
+                "a1.yaml",
+                "a1_student_eval.yaml",
+                "a5.yaml",
+            ],
+            artifact_type="bundle_outputs",
+            metadata={
+                "model_id": args.model_id,
+                "student_adapter_path": args.student_adapter_path,
+            },
+        )
 
 
 if __name__ == "__main__":

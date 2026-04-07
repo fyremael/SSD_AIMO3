@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
 from common import read_jsonl, write_json
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -210,7 +211,32 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    run_training(args)
+    output_dir = Path(args.output_dir).resolve()
+    with wandb_run_context(
+        config=None,
+        output_dir=output_dir,
+        script_name="colab_train_lora.py",
+        job_type="lora_training_backend",
+        extra_config={
+            "dataset_path": str(Path(args.dataset_path).resolve()),
+            "model_id": args.model_id,
+            "dtype": args.dtype,
+            "quantization": args.quantization,
+            "max_seq_length": args.max_seq_length,
+            "num_train_epochs": args.num_train_epochs,
+        },
+    ) as wandb_session:
+        summary = run_training(args)
+        wandb_session.log_metrics(summary, prefix="lora_training")
+        wandb_session.update_summary(summary, prefix="lora_training")
+        wandb_session.log_output_artifact(
+            output_dir=output_dir,
+            candidate_files=[
+                Path(args.summary_json).name if args.summary_json else "",
+            ],
+            artifact_type="lora_training_outputs",
+            metadata=summary,
+        )
 
 
 if __name__ == "__main__":

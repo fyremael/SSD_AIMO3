@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 from common import ensure_parent, write_json, write_jsonl
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -178,32 +179,55 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    rows = _load_rows(Path(args.input_path), args.input_format)
-    prompt_rows, eval_rows, metadata_rows = build_manifests(
-        rows,
-        problem_id_field=args.problem_id_field,
-        prompt_field=args.prompt_field,
-        answer_field=args.answer_field,
-        topic_field=args.topic_field,
-        difficulty_field=args.difficulty_field,
-        tags_field=args.tags_field,
-        source_field=args.source_field,
-        source_name=args.source_name,
-    )
+    summary_path = Path(args.summary_json).resolve()
+    with wandb_run_context(
+        config=None,
+        output_dir=summary_path.parent,
+        script_name="build_problem_manifests.py",
+        job_type="manifest_build",
+        extra_config={
+            "input_path": str(Path(args.input_path).resolve()),
+            "input_format": args.input_format,
+            "problem_id_field": args.problem_id_field,
+            "prompt_field": args.prompt_field,
+            "answer_field": args.answer_field,
+        },
+    ) as wandb_session:
+        rows = _load_rows(Path(args.input_path), args.input_format)
+        prompt_rows, eval_rows, metadata_rows = build_manifests(
+            rows,
+            problem_id_field=args.problem_id_field,
+            prompt_field=args.prompt_field,
+            answer_field=args.answer_field,
+            topic_field=args.topic_field,
+            difficulty_field=args.difficulty_field,
+            tags_field=args.tags_field,
+            source_field=args.source_field,
+            source_name=args.source_name,
+        )
 
-    write_jsonl(Path(args.prompt_output_jsonl), prompt_rows)
-    write_jsonl(Path(args.eval_output_jsonl), eval_rows)
-    write_jsonl(Path(args.metadata_output_jsonl), metadata_rows)
-    write_json(
-        Path(args.summary_json),
-        {
+        write_jsonl(Path(args.prompt_output_jsonl), prompt_rows)
+        write_jsonl(Path(args.eval_output_jsonl), eval_rows)
+        write_jsonl(Path(args.metadata_output_jsonl), metadata_rows)
+        summary = {
             "input_path": str(Path(args.input_path).resolve()),
             "num_input_rows": len(rows),
             "num_prompt_rows": len(prompt_rows),
             "num_eval_rows": len(eval_rows),
             "num_metadata_rows": len(metadata_rows),
-        },
-    )
+        }
+        write_json(summary_path, summary)
+
+        wandb_session.log_metrics(summary, prefix="manifest")
+        wandb_session.update_summary(summary, prefix="manifest")
+        wandb_session.log_output_artifact(
+            output_dir=summary_path.parent,
+            candidate_files=[
+                Path(args.summary_json).name,
+            ],
+            artifact_type="manifest_outputs",
+            metadata=summary,
+        )
 
 
 if __name__ == "__main__":

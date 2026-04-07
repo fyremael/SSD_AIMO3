@@ -31,3 +31,5 @@ def test_notebook_covers_bootstrap_bundle_and_decision_flow() -> None:
     assert "EXPERIMENT_MODE" in notebook_text
     assert "starter_fixture_complete" in notebook_text
     assert "run_validation_ladder.py" in notebook_text
+    assert "WANDB_API_KEY" in notebook_text
+    assert "google.colab" in notebook_text

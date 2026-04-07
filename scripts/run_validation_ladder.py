@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from common import read_json, resolve_config_path, write_json
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -98,132 +99,173 @@ def main() -> None:
     args = build_parser().parse_args()
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    a0_cfg = resolve_config_path(args.a0_config)
-    a1_cfg = resolve_config_path(args.a1_config)
-    a5_cfg = resolve_config_path(args.a5_config)
-    metadata_jsonl = args.metadata_jsonl or _resolve_config_input(
-        a0_cfg,
-        ("paths", "problem_metadata_jsonl"),
-    )
-
-    a1_generation_dir = output_dir / "a1_generation"
-    a1_train_dir = output_dir / "a1_train"
-    a0_eval_dir = output_dir / "a0_eval"
-    a1_eval_dir = output_dir / "a1_eval"
-    a5_eval_dir = output_dir / "a5_eval"
-    compare_a0_a1_dir = output_dir / "compare_a0_a1"
-    compare_a1_a5_dir = output_dir / "compare_a1_a5"
-
-    a1_prompt_input = _resolve_config_input(a1_cfg, ("inputs", "prompt_input_jsonl"), ("paths", "unlabeled_prompt_manifest_jsonl"))
-    a0_eval_input = _resolve_config_input(a0_cfg, ("inputs", "eval_input_jsonl"), ("paths", "eval_manifest_jsonl"))
-    a1_eval_input = _resolve_config_input(a1_cfg, ("inputs", "eval_input_jsonl"), ("paths", "eval_manifest_jsonl"))
-    a5_eval_input = _resolve_config_input(a5_cfg, ("inputs", "eval_input_jsonl"), ("inputs", "tropical_input_jsonl"), ("paths", "eval_manifest_jsonl"))
-
-    commands = [
-        [
-            "scripts/generate_self_samples.py",
-            "--config",
-            args.a1_config,
-            "--input-jsonl",
-            a1_prompt_input,
-            "--output-dir",
-            str(a1_generation_dir),
-        ],
-        [
-            "scripts/train_ssd_math.py",
-            "--config",
-            args.a1_config,
-            "--input-jsonl",
-            str(a1_generation_dir / "generations.jsonl"),
-            "--output-dir",
-            str(a1_train_dir),
-        ],
-        [
-            "scripts/run_eval_math.py",
-            "--config",
-            args.a0_config,
-            "--input-jsonl",
-            a0_eval_input,
-            "--output-dir",
-            str(a0_eval_dir),
-        ],
-        [
-            "scripts/run_eval_math.py",
-            "--config",
-            args.a1_config,
-            "--input-jsonl",
-            a1_eval_input,
-            "--output-dir",
-            str(a1_eval_dir),
-        ],
-        [
-            "scripts/run_eval_math.py",
-            "--config",
-            args.a5_config,
-            "--input-jsonl",
-            a5_eval_input,
-            "--output-dir",
-            str(a5_eval_dir),
-        ],
-        [
-            "scripts/compare_eval_runs.py",
-            "--run-a-dir",
-            str(a0_eval_dir),
-            "--run-b-dir",
-            str(a1_eval_dir),
-            "--run-a-label",
-            "a0_majority_vote",
-            "--run-b-label",
-            "a1_majority_vote",
-            "--metadata-jsonl",
-            metadata_jsonl,
-            "--output-dir",
-            str(compare_a0_a1_dir),
-        ],
-        [
-            "scripts/compare_eval_runs.py",
-            "--run-a-dir",
-            str(a1_eval_dir),
-            "--run-b-dir",
-            str(a5_eval_dir),
-            "--run-a-label",
-            "a1_majority_vote",
-            "--run-b-label",
-            "a5_tropical_rerank",
-            "--metadata-jsonl",
-            metadata_jsonl,
-            "--output-dir",
-            str(compare_a1_a5_dir),
-        ],
-    ]
-
-    if args.dry_run:
-        commands = [command + ["--dry-run"] if command[0].endswith(".py") and "compare_eval_runs.py" not in command[0] else command for command in commands]
-
-    for command in commands:
-        run_python_step(command, cwd=ROOT)
-
-    a0_metrics = read_json(a0_eval_dir / "metrics.json")
-    a1_metrics = read_json(a1_eval_dir / "metrics.json")
-    a5_metrics = read_json(a5_eval_dir / "metrics.json")
-    a0_vs_a1 = read_json(compare_a0_a1_dir / "comparison_summary.json")
-    a1_vs_a5 = read_json(compare_a1_a5_dir / "comparison_summary.json")
-
-    summary = build_ladder_summary(a0_metrics, a1_metrics, a5_metrics, a0_vs_a1, a1_vs_a5)
-    write_json(output_dir / "ladder_summary.json", summary)
-    (output_dir / "ladder_report.md").write_text(render_ladder_report(summary), encoding="utf-8")
-    write_json(
-        output_dir / "ladder_manifest.json",
-        {
+    with wandb_run_context(
+        config=None,
+        output_dir=output_dir,
+        script_name="run_validation_ladder.py",
+        job_type="validation_ladder",
+        extra_config={
             "a0_config": str(Path(args.a0_config).resolve()),
             "a1_config": str(Path(args.a1_config).resolve()),
             "a5_config": str(Path(args.a5_config).resolve()),
-            "metadata_jsonl": str(Path(metadata_jsonl).resolve()),
-            "commands": commands,
             "dry_run": bool(args.dry_run),
         },
-    )
+    ) as wandb_session:
+        a0_cfg = resolve_config_path(args.a0_config)
+        a1_cfg = resolve_config_path(args.a1_config)
+        a5_cfg = resolve_config_path(args.a5_config)
+        metadata_jsonl = args.metadata_jsonl or _resolve_config_input(
+            a0_cfg,
+            ("paths", "problem_metadata_jsonl"),
+        )
+
+        a1_generation_dir = output_dir / "a1_generation"
+        a1_train_dir = output_dir / "a1_train"
+        a0_eval_dir = output_dir / "a0_eval"
+        a1_eval_dir = output_dir / "a1_eval"
+        a5_eval_dir = output_dir / "a5_eval"
+        compare_a0_a1_dir = output_dir / "compare_a0_a1"
+        compare_a1_a5_dir = output_dir / "compare_a1_a5"
+
+        a1_prompt_input = _resolve_config_input(a1_cfg, ("inputs", "prompt_input_jsonl"), ("paths", "unlabeled_prompt_manifest_jsonl"))
+        a0_eval_input = _resolve_config_input(a0_cfg, ("inputs", "eval_input_jsonl"), ("paths", "eval_manifest_jsonl"))
+        a1_eval_input = _resolve_config_input(a1_cfg, ("inputs", "eval_input_jsonl"), ("paths", "eval_manifest_jsonl"))
+        a5_eval_input = _resolve_config_input(a5_cfg, ("inputs", "eval_input_jsonl"), ("inputs", "tropical_input_jsonl"), ("paths", "eval_manifest_jsonl"))
+
+        commands = [
+            [
+                "scripts/generate_self_samples.py",
+                "--config",
+                args.a1_config,
+                "--input-jsonl",
+                a1_prompt_input,
+                "--output-dir",
+                str(a1_generation_dir),
+            ],
+            [
+                "scripts/train_ssd_math.py",
+                "--config",
+                args.a1_config,
+                "--input-jsonl",
+                str(a1_generation_dir / "generations.jsonl"),
+                "--output-dir",
+                str(a1_train_dir),
+            ],
+            [
+                "scripts/run_eval_math.py",
+                "--config",
+                args.a0_config,
+                "--input-jsonl",
+                a0_eval_input,
+                "--output-dir",
+                str(a0_eval_dir),
+            ],
+            [
+                "scripts/run_eval_math.py",
+                "--config",
+                args.a1_config,
+                "--input-jsonl",
+                a1_eval_input,
+                "--output-dir",
+                str(a1_eval_dir),
+            ],
+            [
+                "scripts/run_eval_math.py",
+                "--config",
+                args.a5_config,
+                "--input-jsonl",
+                a5_eval_input,
+                "--output-dir",
+                str(a5_eval_dir),
+            ],
+            [
+                "scripts/compare_eval_runs.py",
+                "--run-a-dir",
+                str(a0_eval_dir),
+                "--run-b-dir",
+                str(a1_eval_dir),
+                "--run-a-label",
+                "a0_majority_vote",
+                "--run-b-label",
+                "a1_majority_vote",
+                "--metadata-jsonl",
+                metadata_jsonl,
+                "--output-dir",
+                str(compare_a0_a1_dir),
+            ],
+            [
+                "scripts/compare_eval_runs.py",
+                "--run-a-dir",
+                str(a1_eval_dir),
+                "--run-b-dir",
+                str(a5_eval_dir),
+                "--run-a-label",
+                "a1_majority_vote",
+                "--run-b-label",
+                "a5_tropical_rerank",
+                "--metadata-jsonl",
+                metadata_jsonl,
+                "--output-dir",
+                str(compare_a1_a5_dir),
+            ],
+        ]
+
+        if args.dry_run:
+            commands = [
+                command + ["--dry-run"] if command[0].endswith(".py") and "compare_eval_runs.py" not in command[0] else command
+                for command in commands
+            ]
+
+        for command in commands:
+            run_python_step(command, cwd=ROOT)
+
+        a0_metrics = read_json(a0_eval_dir / "metrics.json")
+        a1_metrics = read_json(a1_eval_dir / "metrics.json")
+        a5_metrics = read_json(a5_eval_dir / "metrics.json")
+        a0_vs_a1 = read_json(compare_a0_a1_dir / "comparison_summary.json")
+        a1_vs_a5 = read_json(compare_a1_a5_dir / "comparison_summary.json")
+
+        summary = build_ladder_summary(a0_metrics, a1_metrics, a5_metrics, a0_vs_a1, a1_vs_a5)
+        write_json(output_dir / "ladder_summary.json", summary)
+        (output_dir / "ladder_report.md").write_text(render_ladder_report(summary), encoding="utf-8")
+        write_json(
+            output_dir / "ladder_manifest.json",
+            {
+                "a0_config": str(Path(args.a0_config).resolve()),
+                "a1_config": str(Path(args.a1_config).resolve()),
+                "a5_config": str(Path(args.a5_config).resolve()),
+                "metadata_jsonl": str(Path(metadata_jsonl).resolve()),
+                "commands": commands,
+                "dry_run": bool(args.dry_run),
+            },
+        )
+
+        wandb_session.log_metrics(summary, prefix="ladder")
+        wandb_session.update_summary(
+            {
+                "a0_accuracy": summary.get("a0_accuracy"),
+                "a1_accuracy": summary.get("a1_accuracy"),
+                "a5_accuracy": summary.get("a5_accuracy"),
+                "a1_directional_gain": summary.get("a1_directional_gain"),
+                "a5_directional_gain": summary.get("a5_directional_gain"),
+                "dry_run": bool(args.dry_run),
+            },
+            prefix="ladder",
+        )
+        wandb_session.log_output_artifact(
+            output_dir=output_dir,
+            candidate_files=[
+                "ladder_summary.json",
+                "ladder_report.md",
+                "ladder_manifest.json",
+            ],
+            artifact_type="validation_ladder_outputs",
+            metadata={
+                "dry_run": bool(args.dry_run),
+                "a1_directional_gain": summary.get("a1_directional_gain"),
+                "a5_directional_gain": summary.get("a5_directional_gain"),
+            },
+        )
 
 
 if __name__ == "__main__":

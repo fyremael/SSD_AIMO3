@@ -16,6 +16,7 @@ from common import (
     write_jsonl,
 )
 from extract_answer import DEFAULT_MAX_ANSWER, extract_record
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -167,56 +168,99 @@ def main() -> None:
 
     config = resolve_config_from_args(args)
     output_dir = Path(args.output_dir)
-    save_resolved_config(output_dir, config)
-
-    records = read_jsonl(args.input_jsonl)
-    filtering_cfg = config.get("filtering", {})
-    max_answer = int(config.get("extraction", {}).get("max_answer", DEFAULT_MAX_ANSWER))
-    dataset_rows, audit_rows = build_training_dataset(
-        records,
-        generation_field=args.generation_field,
-        max_answer=max_answer,
-        filtering_cfg=filtering_cfg,
-    )
-
-    metrics = {
-        "num_input_rows": len(records),
-        "num_training_rows": len(dataset_rows),
-        "num_rejected_rows": len(audit_rows) - len(dataset_rows),
-        "keep_for_training_counts": _count_values(audit_rows, "keep_for_training"),
-        "rejection_reason_counts": _count_values([row for row in audit_rows if not row.get("keep_for_training")], "audit_reason"),
-        "template_name_counts": _count_values(dataset_rows, "template_name"),
-        "dry_run": bool(args.dry_run),
-    }
-    training_plan = build_training_plan(config, output_dir=output_dir, num_training_rows=len(dataset_rows))
-
-    write_jsonl(output_dir / "train_dataset.jsonl", dataset_rows)
-    write_jsonl(output_dir / "training_audit.jsonl", audit_rows)
-    write_json(output_dir / "training_metrics.json", metrics)
-
-    launch_record = maybe_launch_training(
+    with wandb_run_context(
         config=config,
         output_dir=output_dir,
-        training_plan=training_plan,
-        num_training_rows=len(dataset_rows),
-        requested_launch=bool(args.launch),
-    )
-
-    write_json(output_dir / "training_plan.json", training_plan)
-    if launch_record is not None:
-        write_json(output_dir / "training_launch.json", launch_record)
-
-    save_run_manifest(
-        output_dir,
-        {
-            "script": "train_ssd_math.py",
-            "input_jsonl": str(args.input_jsonl),
-            "num_input_rows": len(records),
-            "num_training_rows": len(dataset_rows),
-            "launch_status": training_plan.get("launch_status"),
+        script_name="train_ssd_math.py",
+        job_type="training_dataset",
+        extra_config={
+            "input_jsonl": args.input_jsonl,
+            "generation_field": args.generation_field,
+            "requested_launch": bool(args.launch),
             "dry_run": bool(args.dry_run),
         },
-    )
+    ) as wandb_session:
+        save_resolved_config(output_dir, config)
+
+        records = read_jsonl(args.input_jsonl)
+        filtering_cfg = config.get("filtering", {})
+        max_answer = int(config.get("extraction", {}).get("max_answer", DEFAULT_MAX_ANSWER))
+        dataset_rows, audit_rows = build_training_dataset(
+            records,
+            generation_field=args.generation_field,
+            max_answer=max_answer,
+            filtering_cfg=filtering_cfg,
+        )
+
+        metrics = {
+            "num_input_rows": len(records),
+            "num_training_rows": len(dataset_rows),
+            "num_rejected_rows": len(audit_rows) - len(dataset_rows),
+            "keep_for_training_counts": _count_values(audit_rows, "keep_for_training"),
+            "rejection_reason_counts": _count_values(
+                [row for row in audit_rows if not row.get("keep_for_training")],
+                "audit_reason",
+            ),
+            "template_name_counts": _count_values(dataset_rows, "template_name"),
+            "dry_run": bool(args.dry_run),
+        }
+        training_plan = build_training_plan(config, output_dir=output_dir, num_training_rows=len(dataset_rows))
+
+        write_jsonl(output_dir / "train_dataset.jsonl", dataset_rows)
+        write_jsonl(output_dir / "training_audit.jsonl", audit_rows)
+        write_json(output_dir / "training_metrics.json", metrics)
+
+        launch_record = maybe_launch_training(
+            config=config,
+            output_dir=output_dir,
+            training_plan=training_plan,
+            num_training_rows=len(dataset_rows),
+            requested_launch=bool(args.launch),
+        )
+
+        write_json(output_dir / "training_plan.json", training_plan)
+        if launch_record is not None:
+            write_json(output_dir / "training_launch.json", launch_record)
+
+        save_run_manifest(
+            output_dir,
+            {
+                "script": "train_ssd_math.py",
+                "input_jsonl": str(args.input_jsonl),
+                "num_input_rows": len(records),
+                "num_training_rows": len(dataset_rows),
+                "launch_status": training_plan.get("launch_status"),
+                "dry_run": bool(args.dry_run),
+            },
+        )
+
+        wandb_session.log_metrics(metrics, prefix="training")
+        wandb_session.update_summary(
+            {
+                "num_input_rows": len(records),
+                "num_training_rows": len(dataset_rows),
+                "launch_status": training_plan.get("launch_status"),
+                "save_dataset_only": training_plan.get("save_dataset_only"),
+                "dry_run": bool(args.dry_run),
+            },
+            prefix="training",
+        )
+        wandb_session.log_output_artifact(
+            output_dir=output_dir,
+            candidate_files=[
+                "config_resolved.yaml",
+                "training_metrics.json",
+                "training_plan.json",
+                "training_launch.json",
+                "run_manifest.json",
+                "adapter_summary.json",
+            ],
+            artifact_type="training_outputs",
+            metadata={
+                "num_training_rows": len(dataset_rows),
+                "launch_status": training_plan.get("launch_status"),
+            },
+        )
 
 
 if __name__ == "__main__":

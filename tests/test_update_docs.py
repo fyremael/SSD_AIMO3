@@ -30,3 +30,4 @@ def test_render_status_mentions_automation() -> None:
     text = render_status(build_summary())
     assert "Automated upkeep" in text
     assert "Notebook-first Colab experimentation engine" in text
+    assert "Weights & Biases telemetry" in text

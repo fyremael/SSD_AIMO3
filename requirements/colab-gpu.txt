@@ -6,3 +6,4 @@ bitsandbytes>=0.43
 safetensors>=0.4
 sentencepiece>=0.2
 pyyaml>=6.0
+wandb>=0.17

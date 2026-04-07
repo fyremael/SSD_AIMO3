@@ -17,6 +17,7 @@ from common import (
 from extract_answer import extract_record
 from tropical_rerank import aggregate_answers as tropical_aggregate_answers
 from tropical_rerank import build_proof_state
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -229,54 +230,98 @@ def main() -> None:
 
     config = resolve_config_from_args(args)
     output_dir = Path(args.output_dir)
-    save_resolved_config(output_dir, config)
-
-    requested_backend = args.aggregation_backend
-    config_backend = str(config.get("aggregation", {}).get("strategy", "majority_vote"))
-    backend = config_backend if requested_backend == "auto" else requested_backend
-    extraction_cfg = config.get("extraction", {})
-    extraction_policy = args.extraction_policy or str(extraction_cfg.get("policy", DEFAULT_EXTRACTION_POLICY))
-    max_answer = int(args.max_answer if args.max_answer is not None else extraction_cfg.get("max_answer", 99999))
-
-    records = read_jsonl(args.input_jsonl)
-    prepared_records = prepare_records_for_eval(
-        records,
-        text_field=args.text_field,
-        answer_field=args.answer_field,
-        extraction_policy=extraction_policy,
-        max_answer=max_answer,
-    )
-    write_jsonl(output_dir / "prepared_samples.jsonl", prepared_records)
-
-    proof_states: Optional[List[JsonDict]] = None
-    if backend == "tropical_rerank":
-        constraint_cfg = config.get("constraints", {})
-        proof_states = [build_proof_state(record, constraint_cfg, args.text_field, "extracted_answer") for record in prepared_records]
-        aggregates = tropical_aggregate_answers(proof_states, config.get("aggregation", {}))
-        write_jsonl(output_dir / "proof_states.jsonl", proof_states)
-        write_jsonl(output_dir / "tropical_aggregates.jsonl", aggregates)
-    elif backend == "majority_vote":
-        aggregates = aggregate_majority_vote(prepared_records)
-        write_jsonl(output_dir / "aggregates.jsonl", aggregates)
-    else:
-        raise ValueError(f"Unsupported aggregation backend: {backend}")
-
-    metrics = compute_eval_metrics(aggregates, backend=backend, dry_run=bool(args.dry_run), sample_records=prepared_records)
-    write_json(output_dir / "metrics.json", metrics)
-    save_run_manifest(
-        output_dir,
-        {
-            "script": "run_eval_math.py",
-            "input_jsonl": str(args.input_jsonl),
-            "aggregation_backend": backend,
-            "num_records": len(records),
-            "num_prepared_records": len(prepared_records),
-            "num_problems": len(aggregates),
-            "extraction_policy": extraction_policy,
-            "max_answer": max_answer,
+    with wandb_run_context(
+        config=config,
+        output_dir=output_dir,
+        script_name="run_eval_math.py",
+        job_type="evaluation",
+        extra_config={
+            "input_jsonl": args.input_jsonl,
+            "aggregation_backend": args.aggregation_backend,
+            "text_field": args.text_field,
+            "answer_field": args.answer_field,
             "dry_run": bool(args.dry_run),
         },
-    )
+    ) as wandb_session:
+        save_resolved_config(output_dir, config)
+
+        requested_backend = args.aggregation_backend
+        config_backend = str(config.get("aggregation", {}).get("strategy", "majority_vote"))
+        backend = config_backend if requested_backend == "auto" else requested_backend
+        extraction_cfg = config.get("extraction", {})
+        extraction_policy = args.extraction_policy or str(extraction_cfg.get("policy", DEFAULT_EXTRACTION_POLICY))
+        max_answer = int(args.max_answer if args.max_answer is not None else extraction_cfg.get("max_answer", 99999))
+
+        records = read_jsonl(args.input_jsonl)
+        prepared_records = prepare_records_for_eval(
+            records,
+            text_field=args.text_field,
+            answer_field=args.answer_field,
+            extraction_policy=extraction_policy,
+            max_answer=max_answer,
+        )
+        write_jsonl(output_dir / "prepared_samples.jsonl", prepared_records)
+
+        proof_states: Optional[List[JsonDict]] = None
+        if backend == "tropical_rerank":
+            constraint_cfg = config.get("constraints", {})
+            proof_states = [build_proof_state(record, constraint_cfg, args.text_field, "extracted_answer") for record in prepared_records]
+            aggregates = tropical_aggregate_answers(proof_states, config.get("aggregation", {}))
+            write_jsonl(output_dir / "proof_states.jsonl", proof_states)
+            write_jsonl(output_dir / "tropical_aggregates.jsonl", aggregates)
+        elif backend == "majority_vote":
+            aggregates = aggregate_majority_vote(prepared_records)
+            write_jsonl(output_dir / "aggregates.jsonl", aggregates)
+        else:
+            raise ValueError(f"Unsupported aggregation backend: {backend}")
+
+        metrics = compute_eval_metrics(aggregates, backend=backend, dry_run=bool(args.dry_run), sample_records=prepared_records)
+        write_json(output_dir / "metrics.json", metrics)
+        save_run_manifest(
+            output_dir,
+            {
+                "script": "run_eval_math.py",
+                "input_jsonl": str(args.input_jsonl),
+                "aggregation_backend": backend,
+                "num_records": len(records),
+                "num_prepared_records": len(prepared_records),
+                "num_problems": len(aggregates),
+                "extraction_policy": extraction_policy,
+                "max_answer": max_answer,
+                "dry_run": bool(args.dry_run),
+            },
+        )
+
+        wandb_session.log_metrics(metrics, prefix="evaluation")
+        wandb_session.update_summary(
+            {
+                "aggregation_backend": backend,
+                "num_records": len(records),
+                "num_prepared_records": len(prepared_records),
+                "num_problems": len(aggregates),
+                "extraction_policy": extraction_policy,
+                "max_answer": max_answer,
+                "dry_run": bool(args.dry_run),
+            },
+            prefix="evaluation",
+        )
+        wandb_session.log_output_artifact(
+            output_dir=output_dir,
+            candidate_files=[
+                "config_resolved.yaml",
+                "metrics.json",
+                "run_manifest.json",
+                "aggregates.jsonl",
+                "tropical_aggregates.jsonl",
+                "proof_states.jsonl",
+            ],
+            artifact_type="evaluation_outputs",
+            metadata={
+                "aggregation_backend": backend,
+                "num_records": len(records),
+                "num_prepared_records": len(prepared_records),
+            },
+        )
 
 
 if __name__ == "__main__":

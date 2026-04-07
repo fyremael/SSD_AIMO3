@@ -52,6 +52,8 @@ Available template variables:
 Example config: `configs/command_backend_example.yaml`
 Colab GPU-specific configs live in `configs/colab_gpu_*.yaml`.
 
+If `SSD_AIMO3_WANDB_*` env vars are present, the generation script and backend generator will also emit grouped W&B telemetry automatically.
+
 ## External training backend
 
 Set `training.launcher.command` and run:
@@ -71,6 +73,8 @@ Available template variables:
 - `{num_train_epochs}`
 - `{max_seq_length}`
 - `{train_rows}`
+
+If `SSD_AIMO3_WANDB_*` env vars are present, the dataset-packaging script and backend trainer will emit grouped W&B telemetry automatically.
 
 ## Smoke-test the external hooks
 

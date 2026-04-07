@@ -1,8 +1,8 @@
 {
   "docs_count": 9,
   "config_count": 18,
-  "script_count": 18,
-  "test_count": 18,
+  "script_count": 19,
+  "test_count": 19,
   "fixture_data_count": 5,
   "notebook_count": 1,
   "workflow_count": 1,
@@ -202,6 +202,10 @@
     {
       "path": "scripts/update_docs.py",
       "description": "Generate repo index, status, and summary documentation artifacts."
+    },
+    {
+      "path": "scripts/wandb_support.py",
+      "description": "Shared Weights & Biases helpers for grouped experiment telemetry and compact artifact logging."
     }
   ],
   "workflow_catalog": [

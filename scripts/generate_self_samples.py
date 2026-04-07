@@ -17,6 +17,7 @@ from common import (
     write_jsonl,
 )
 from extract_answer import DEFAULT_MAX_ANSWER, extract_record
+from wandb_support import wandb_run_context
 
 
 JsonDict = Dict[str, Any]
@@ -360,49 +361,89 @@ def main() -> None:
 
     config = resolve_config_from_args(args)
     output_dir = Path(args.output_dir)
-    save_resolved_config(output_dir, config)
-
-    prompt_records = load_prompt_records(config, args.input_jsonl, dry_run=bool(args.dry_run))
-    template_name, template_text = choose_template(config, args.template_name)
-    num_samples = int(args.num_samples if args.num_samples is not None else config.get("generation", {}).get("num_return_sequences_train", 1))
-    max_answer = int(config.get("extraction", {}).get("max_answer", DEFAULT_MAX_ANSWER))
-    generation_rows = build_generation_rows(
-        prompt_records,
+    with wandb_run_context(
         config=config,
-        template_name=template_name,
-        template_text=template_text,
-        num_samples=max(1, num_samples),
-        max_answer=max_answer,
-        dry_run=bool(args.dry_run),
         output_dir=output_dir,
-    )
-
-    metrics = {
-        "num_prompts": len(prompt_records),
-        "num_generations": len(generation_rows),
-        "template_name": template_name,
-        "num_samples_per_prompt": max(1, num_samples),
-        "generation_backend": str(config.get("generation", {}).get("backend", "replay_or_stub")),
-        "extraction_status_counts": _count_values(generation_rows, "extraction_status"),
-        "filter_status_counts": _count_values(generation_rows, "filter_status"),
-        "dry_run": bool(args.dry_run),
-    }
-
-    write_jsonl(output_dir / "generations.jsonl", generation_rows)
-    write_json(output_dir / "generation_metrics.json", metrics)
-    save_run_manifest(
-        output_dir,
-        {
-            "script": "generate_self_samples.py",
+        script_name="generate_self_samples.py",
+        job_type="generation",
+        extra_config={
             "input_jsonl": args.input_jsonl,
+            "template_name": args.template_name,
+            "requested_num_samples": args.num_samples,
+            "dry_run": bool(args.dry_run),
+        },
+    ) as wandb_session:
+        save_resolved_config(output_dir, config)
+
+        prompt_records = load_prompt_records(config, args.input_jsonl, dry_run=bool(args.dry_run))
+        template_name, template_text = choose_template(config, args.template_name)
+        num_samples = int(
+            args.num_samples if args.num_samples is not None else config.get("generation", {}).get("num_return_sequences_train", 1)
+        )
+        max_answer = int(config.get("extraction", {}).get("max_answer", DEFAULT_MAX_ANSWER))
+        generation_rows = build_generation_rows(
+            prompt_records,
+            config=config,
+            template_name=template_name,
+            template_text=template_text,
+            num_samples=max(1, num_samples),
+            max_answer=max_answer,
+            dry_run=bool(args.dry_run),
+            output_dir=output_dir,
+        )
+
+        metrics = {
             "num_prompts": len(prompt_records),
             "num_generations": len(generation_rows),
             "template_name": template_name,
-            "generation_backend": str(config.get("generation", {}).get("backend", "replay_or_stub")),
             "num_samples_per_prompt": max(1, num_samples),
+            "generation_backend": str(config.get("generation", {}).get("backend", "replay_or_stub")),
+            "extraction_status_counts": _count_values(generation_rows, "extraction_status"),
+            "filter_status_counts": _count_values(generation_rows, "filter_status"),
             "dry_run": bool(args.dry_run),
-        },
-    )
+        }
+
+        write_jsonl(output_dir / "generations.jsonl", generation_rows)
+        write_json(output_dir / "generation_metrics.json", metrics)
+        save_run_manifest(
+            output_dir,
+            {
+                "script": "generate_self_samples.py",
+                "input_jsonl": args.input_jsonl,
+                "num_prompts": len(prompt_records),
+                "num_generations": len(generation_rows),
+                "template_name": template_name,
+                "generation_backend": str(config.get("generation", {}).get("backend", "replay_or_stub")),
+                "num_samples_per_prompt": max(1, num_samples),
+                "dry_run": bool(args.dry_run),
+            },
+        )
+
+        wandb_session.log_metrics(metrics, prefix="generation")
+        wandb_session.update_summary(
+            {
+                "num_prompts": len(prompt_records),
+                "num_generations": len(generation_rows),
+                "template_name": template_name,
+                "generation_backend": metrics["generation_backend"],
+                "dry_run": bool(args.dry_run),
+            },
+            prefix="generation",
+        )
+        wandb_session.log_output_artifact(
+            output_dir=output_dir,
+            candidate_files=[
+                "config_resolved.yaml",
+                "generation_metrics.json",
+                "run_manifest.json",
+                "hf_generate_summary.json",
+            ],
+            artifact_type="generation_outputs",
+            metadata={
+                "template_name": template_name,
+                "generation_backend": metrics["generation_backend"],
+            },
+        )
 
 
 if __name__ == "__main__":

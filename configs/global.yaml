@@ -59,6 +59,19 @@ training:
     command: null
     workdir: null
 
+wandb:
+  enabled: false
+  project: SSD_AIMO3
+  entity: null
+  mode: online
+  group: null
+  run_prefix: null
+  run_name: null
+  tags: []
+  notes: null
+  log_artifacts: true
+  artifact_max_file_size_mb: 25
+
 dry_run:
   synthetic_answer_modulus: 97
   max_examples: 16

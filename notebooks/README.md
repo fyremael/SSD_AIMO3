@@ -10,10 +10,12 @@ Default behavior:
 
 - run it without edits for a self-contained fixture-backed starter pass
 - switch `EXPERIMENT_MODE` to `real` when you want to point it at a real model and corpus
+- provide a Colab secret named `WANDB_API_KEY` so the notebook can authenticate W&B automatically
 
 It is structured to:
 
 - bootstrap the repo into a fresh Colab runtime when needed
+- authenticate W&B and propagate grouped logging env vars to subprocess scripts
 - define the thesis and falsification criteria up front
 - normalize real data into manifests if needed
 - materialize a Colab config bundle from one parameter cell

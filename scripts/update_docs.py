@@ -23,6 +23,7 @@ SCRIPT_DESCRIPTION_FALLBACKS: Dict[str, str] = {
     "scripts/constraint_library.py": "Cheap auditable constraint checks and penalty scoring helpers for tropical reranking.",
     "scripts/materialize_colab_bundle.py": "Materialize notebook-driven Colab config bundles for A0, A1, A1 student eval, and A5 runs.",
     "scripts/update_docs.py": "Generate repo index, status, and summary documentation artifacts.",
+    "scripts/wandb_support.py": "Shared Weights & Biases helpers for grouped experiment telemetry and compact artifact logging.",
 }
 CONFIG_DESCRIPTION_FALLBACKS: Dict[str, str] = {
     "configs/global.yaml": "Shared defaults for experiments, extraction, generation, and training.",
@@ -247,6 +248,7 @@ def render_status(summary: Mapping[str, Any]) -> str:
             "- Real-run manifest normalization and external backend hooks",
             "- Notebook-first Colab experimentation engine with parameterized bundle materialization",
             "- Initial Colab GPU generation and LoRA training path",
+            "- Grouped Weights & Biases telemetry for notebook and subprocess instrumentation",
         ]
     )
     return "\n".join(lines) + "\n"
