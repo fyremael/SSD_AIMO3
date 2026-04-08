@@ -143,6 +143,8 @@ def maybe_launch_training(
         "learning_rate": training_cfg.get("learning_rate"),
         "num_train_epochs": training_cfg.get("num_train_epochs"),
         "max_seq_length": training_cfg.get("max_seq_length"),
+        "per_device_train_batch_size": training_cfg.get("per_device_train_batch_size"),
+        "gradient_accumulation_steps": training_cfg.get("gradient_accumulation_steps"),
         "train_rows": num_training_rows,
     }
     command = render_string_template(str(command_template), values)
