@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import string
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
@@ -12,12 +13,30 @@ import yaml
 JsonDict = Dict[str, Any]
 
 
+def _coerce_bool(value: Any) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "y", "on"}:
+        return True
+    if text in {"0", "false", "no", "n", "off"}:
+        return False
+    return None
+
+
+def add_verbosity_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument("--quiet", action="store_true", help="Reduce console logging")
+    return parser
+
+
 def build_arg_parser(description: str) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--config", default=None, help="Path to YAML config")
     parser.add_argument("--output-dir", required=True, help="Directory for run outputs")
     parser.add_argument("--dry-run", action="store_true", help="Run lightweight validation path")
-    return parser
+    return add_verbosity_args(parser)
 
 
 def deep_merge(base: MutableMapping[str, Any], update: Mapping[str, Any]) -> MutableMapping[str, Any]:
@@ -124,6 +143,7 @@ def resolve_config_from_args(args: argparse.Namespace) -> JsonDict:
     runtime = cfg.setdefault("runtime", {})
     runtime["dry_run"] = bool(getattr(args, "dry_run", False))
     runtime["output_dir"] = str(Path(args.output_dir).resolve())
+    runtime["verbose"] = not bool(getattr(args, "quiet", False))
     return cfg
 
 
@@ -171,6 +191,43 @@ def save_resolved_config(output_dir: Path, config: Mapping[str, Any]) -> None:
 
 def save_run_manifest(output_dir: Path, manifest: Mapping[str, Any]) -> None:
     write_json(output_dir / "run_manifest.json", manifest)
+
+
+def resolve_verbose(
+    args: Optional[argparse.Namespace] = None,
+    config: Optional[Mapping[str, Any]] = None,
+    *,
+    default: bool = True,
+) -> bool:
+    if args is not None and bool(getattr(args, "quiet", False)):
+        return False
+
+    env_value = _coerce_bool(os.environ.get("SSD_AIMO3_VERBOSE"))
+    if env_value is not None:
+        return env_value
+
+    runtime_cfg = config.get("runtime", {}) if isinstance(config, Mapping) else {}
+    cfg_value = _coerce_bool(runtime_cfg.get("verbose") if isinstance(runtime_cfg, Mapping) else None)
+    if cfg_value is not None:
+        return cfg_value
+
+    return default
+
+
+def log_event(message: str, *, payload: Any = None, verbose: bool = True) -> None:
+    if not verbose:
+        return
+    print(f"[SSD_AIMO3] {message}")
+    if payload is None:
+        return
+    if isinstance(payload, str):
+        print(payload)
+        return
+    try:
+        rendered = json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=False)
+    except TypeError:
+        rendered = str(payload)
+    print(rendered)
 
 
 class SafeTemplateDict(dict):

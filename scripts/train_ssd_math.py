@@ -7,8 +7,10 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 from common import (
     build_arg_parser,
+    log_event,
     read_jsonl,
     render_string_template,
+    resolve_verbose,
     resolve_config_from_args,
     save_resolved_config,
     save_run_manifest,
@@ -183,10 +185,22 @@ def main() -> None:
         },
     ) as wandb_session:
         save_resolved_config(output_dir, config)
+        verbose = resolve_verbose(args, config)
 
         records = read_jsonl(args.input_jsonl)
         filtering_cfg = config.get("filtering", {})
         max_answer = int(config.get("extraction", {}).get("max_answer", DEFAULT_MAX_ANSWER))
+        log_event(
+            "Building SSD training dataset",
+            payload={
+                "input_jsonl": str(Path(args.input_jsonl).resolve()),
+                "num_input_rows": len(records),
+                "generation_field": args.generation_field,
+                "max_answer": max_answer,
+                "requested_launch": bool(args.launch),
+            },
+            verbose=verbose,
+        )
         dataset_rows, audit_rows = build_training_dataset(
             records,
             generation_field=args.generation_field,
@@ -211,6 +225,7 @@ def main() -> None:
         write_jsonl(output_dir / "train_dataset.jsonl", dataset_rows)
         write_jsonl(output_dir / "training_audit.jsonl", audit_rows)
         write_json(output_dir / "training_metrics.json", metrics)
+        log_event("Training dataset metrics", payload=metrics, verbose=verbose)
 
         launch_record = maybe_launch_training(
             config=config,
@@ -223,6 +238,9 @@ def main() -> None:
         write_json(output_dir / "training_plan.json", training_plan)
         if launch_record is not None:
             write_json(output_dir / "training_launch.json", launch_record)
+            log_event("Completed external training launch", payload=launch_record, verbose=verbose)
+        else:
+            log_event("Training launch skipped", payload=training_plan, verbose=verbose)
 
         save_run_manifest(
             output_dir,

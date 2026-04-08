@@ -6,7 +6,7 @@ from typing import Any, Dict, Mapping, Optional
 
 import yaml
 
-from common import deep_merge, resolve_config_path, write_json
+from common import add_verbosity_args, deep_merge, log_event, resolve_config_path, write_json
 from wandb_support import wandb_run_context
 
 
@@ -143,13 +143,26 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--a1-base-config", default="configs/colab_gpu_a1.yaml")
     parser.add_argument("--a1-student-base-config", default="configs/colab_gpu_a1_student_eval.yaml")
     parser.add_argument("--a5-base-config", default="configs/colab_gpu_a5.yaml")
-    return parser
+    return add_verbosity_args(parser)
 
 
 def main() -> None:
     args = build_parser().parse_args()
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+    verbose = not bool(args.quiet)
+    log_event(
+        "Materializing Colab config bundle",
+        payload={
+            "output_dir": str(output_dir),
+            "model_id": args.model_id,
+            "prompt_manifest_jsonl": str(Path(args.prompt_manifest_jsonl).resolve()),
+            "eval_prompt_manifest_jsonl": str(Path(args.eval_prompt_manifest_jsonl).resolve()),
+            "problem_metadata_jsonl": str(Path(args.problem_metadata_jsonl).resolve()),
+            "student_adapter_path": args.student_adapter_path,
+        },
+        verbose=verbose,
+    )
     with wandb_run_context(
         config=None,
         output_dir=output_dir,
@@ -197,6 +210,14 @@ def main() -> None:
             student_adapter_path=args.student_adapter_path,
         )
         write_json(output_dir / "bundle_manifest.json", manifest)
+        log_event(
+            "Finished materializing Colab bundle",
+            payload={
+                "bundle_manifest": str((output_dir / "bundle_manifest.json").resolve()),
+                "materialized_configs": manifest["materialized_configs"],
+            },
+            verbose=verbose,
+        )
 
         wandb_session.log_metrics(
             {

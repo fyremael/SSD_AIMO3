@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Mapping, Sequence
 
-from common import read_jsonl, write_json, write_jsonl
+from common import add_verbosity_args, log_event, read_jsonl, write_json, write_jsonl
 from wandb_support import wandb_run_context
 
 
@@ -91,10 +91,26 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
 
     dtype_name = parse_dtype_name(args.dtype)
     request_rows = read_jsonl(args.input_jsonl)
+    verbose = not bool(args.quiet)
 
     tokenizer_id = str(args.tokenizer_id or args.model_id)
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, trust_remote_code=bool(args.trust_remote_code))
     tokenizer = configure_tokenizer_for_generation(tokenizer)
+    log_event(
+        "Initialized HF generation backend",
+        payload={
+            "model_id": args.model_id,
+            "tokenizer_id": tokenizer_id,
+            "adapter_path": args.adapter_path,
+            "num_requests": len(request_rows),
+            "batch_size": args.batch_size,
+            "quantization": args.quantization,
+            "dtype": dtype_name,
+            "use_chat_template": bool(args.use_chat_template),
+            "padding_side": getattr(tokenizer, "padding_side", None),
+        },
+        verbose=verbose,
+    )
 
     model_kwargs: Dict[str, Any] = {
         "trust_remote_code": bool(args.trust_remote_code),
@@ -122,7 +138,16 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
         model_device = torch.device("cpu")
 
     generated_rows: List[JsonDict] = []
-    for request_batch in batched(request_rows, args.batch_size):
+    total_batches = max(1, (len(request_rows) + args.batch_size - 1) // args.batch_size)
+    for batch_index, request_batch in enumerate(batched(request_rows, args.batch_size), start=1):
+        log_event(
+            f"Generating batch {batch_index}/{total_batches}",
+            payload={
+                "batch_size": len(request_batch),
+                "first_problem_id": request_batch[0].get("problem_id") if request_batch else None,
+            },
+            verbose=verbose,
+        )
         prompt_batch = render_model_prompts(
             request_batch,
             prompt_field=args.prompt_field,
@@ -180,6 +205,7 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
     }
     if args.summary_json:
         write_json(Path(args.summary_json), summary)
+    log_event("Completed HF generation", payload=summary, verbose=verbose)
     return summary
 
 
@@ -205,7 +231,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument("--use-chat-template", action="store_true")
     parser.add_argument("--system-prompt", default=None)
-    return parser
+    return add_verbosity_args(parser)
 
 
 def main() -> None:

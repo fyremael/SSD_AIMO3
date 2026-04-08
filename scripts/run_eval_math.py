@@ -7,7 +7,9 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 from common import (
     build_arg_parser,
+    log_event,
     read_jsonl,
+    resolve_verbose,
     resolve_config_from_args,
     save_resolved_config,
     save_run_manifest,
@@ -244,6 +246,7 @@ def main() -> None:
         },
     ) as wandb_session:
         save_resolved_config(output_dir, config)
+        verbose = resolve_verbose(args, config)
 
         requested_backend = args.aggregation_backend
         config_backend = str(config.get("aggregation", {}).get("strategy", "majority_vote"))
@@ -253,6 +256,18 @@ def main() -> None:
         max_answer = int(args.max_answer if args.max_answer is not None else extraction_cfg.get("max_answer", 99999))
 
         records = read_jsonl(args.input_jsonl)
+        log_event(
+            "Running math evaluation",
+            payload={
+                "input_jsonl": str(Path(args.input_jsonl).resolve()),
+                "num_records": len(records),
+                "aggregation_backend": backend,
+                "extraction_policy": extraction_policy,
+                "max_answer": max_answer,
+                "dry_run": bool(args.dry_run),
+            },
+            verbose=verbose,
+        )
         prepared_records = prepare_records_for_eval(
             records,
             text_field=args.text_field,
@@ -277,6 +292,14 @@ def main() -> None:
 
         metrics = compute_eval_metrics(aggregates, backend=backend, dry_run=bool(args.dry_run), sample_records=prepared_records)
         write_json(output_dir / "metrics.json", metrics)
+        log_event(
+            "Completed math evaluation",
+            payload={
+                **metrics,
+                "metrics_json": str((output_dir / "metrics.json").resolve()),
+            },
+            verbose=verbose,
+        )
         save_run_manifest(
             output_dir,
             {

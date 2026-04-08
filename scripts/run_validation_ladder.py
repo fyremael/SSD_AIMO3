@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from common import read_json, resolve_config_path, write_json
+from common import add_verbosity_args, log_event, read_json, resolve_config_path, write_json
 from wandb_support import wandb_run_context
 
 
@@ -31,8 +31,14 @@ def _resolve_config_input(config: Mapping[str, Any], *candidate_paths: Sequence[
     raise KeyError(f"Could not find configured input path in candidates: {candidate_paths!r}")
 
 
-def run_python_step(args: List[str], *, cwd: Path) -> None:
-    subprocess.run([sys.executable, *args], cwd=str(cwd), check=True)
+def run_python_step(args: List[str], *, cwd: Path, verbose: bool) -> None:
+    command = [sys.executable, *args]
+    log_event(
+        "Running ladder step",
+        payload={"cwd": str(cwd), "command": command},
+        verbose=verbose,
+    )
+    subprocess.run(command, cwd=str(cwd), check=True)
 
 
 def build_ladder_summary(
@@ -92,13 +98,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--metadata-jsonl", default=None)
     parser.add_argument("--dry-run", action="store_true")
-    return parser
+    return add_verbosity_args(parser)
 
 
 def main() -> None:
     args = build_parser().parse_args()
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+    verbose = not bool(args.quiet)
+    log_event(
+        "Starting validation ladder",
+        payload={
+            "a0_config": str(Path(args.a0_config).resolve()),
+            "a1_config": str(Path(args.a1_config).resolve()),
+            "a5_config": str(Path(args.a5_config).resolve()),
+            "output_dir": str(output_dir),
+            "dry_run": bool(args.dry_run),
+        },
+        verbose=verbose,
+    )
     with wandb_run_context(
         config=None,
         output_dir=output_dir,
@@ -217,7 +235,7 @@ def main() -> None:
             ]
 
         for command in commands:
-            run_python_step(command, cwd=ROOT)
+            run_python_step(command, cwd=ROOT, verbose=verbose)
 
         a0_metrics = read_json(a0_eval_dir / "metrics.json")
         a1_metrics = read_json(a1_eval_dir / "metrics.json")
@@ -238,6 +256,15 @@ def main() -> None:
                 "commands": commands,
                 "dry_run": bool(args.dry_run),
             },
+        )
+        log_event(
+            "Completed validation ladder",
+            payload={
+                **summary,
+                "ladder_summary_json": str((output_dir / "ladder_summary.json").resolve()),
+                "ladder_report_md": str((output_dir / "ladder_report.md").resolve()),
+            },
+            verbose=verbose,
         )
 
         wandb_session.log_metrics(summary, prefix="ladder")

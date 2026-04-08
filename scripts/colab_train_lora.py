@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
-from common import read_jsonl, write_json
+from common import add_verbosity_args, log_event, read_jsonl, write_json
 from wandb_support import wandb_run_context
 
 
@@ -91,6 +91,20 @@ def run_training(args: argparse.Namespace) -> JsonDict:
     training_texts = build_training_texts(rows, args.text_field)
     if not training_texts:
         raise ValueError(f"No non-empty training texts found in field {args.text_field!r}")
+    verbose = not bool(args.quiet)
+    log_event(
+        "Preparing LoRA training backend",
+        payload={
+            "dataset_path": str(Path(args.dataset_path).resolve()),
+            "num_input_rows": len(rows),
+            "num_training_texts": len(training_texts),
+            "model_id": args.model_id,
+            "dtype": dtype_name,
+            "quantization": args.quantization,
+            "text_field": args.text_field,
+        },
+        verbose=verbose,
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_id, trust_remote_code=bool(args.trust_remote_code))
     if tokenizer.pad_token is None:
@@ -119,6 +133,7 @@ def run_training(args: argparse.Namespace) -> JsonDict:
     target_modules = parse_target_modules(args.target_modules)
     if args.target_modules is None:
         target_modules = _guess_target_modules(model)
+    log_event("Resolved LoRA target modules", payload={"target_modules": target_modules}, verbose=verbose)
 
     lora_config = LoraConfig(
         r=args.lora_r,
@@ -181,6 +196,7 @@ def run_training(args: argparse.Namespace) -> JsonDict:
     }
     if args.summary_json:
         write_json(Path(args.summary_json), summary)
+    log_event("Completed LoRA training backend", payload=summary, verbose=verbose)
     return summary
 
 
@@ -206,7 +222,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lora-dropout", type=float, default=0.05)
     parser.add_argument("--target-modules", default=None)
     parser.add_argument("--trust-remote-code", action="store_true")
-    return parser
+    return add_verbosity_args(parser)
 
 
 def main() -> None:

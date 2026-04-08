@@ -48,6 +48,7 @@ Use the notebook when the goal is to methodically validate or invalidate the the
 - switch `EXPERIMENT_MODE` to `\"real\"` with `REAL_MODE_PRESET = \"\"` only when you want to bring your own model and manifests
 - let it clone the repo, install the GPU stack, and normalize manifests if needed
 - let it authenticate W&B from the `WANDB_API_KEY` Colab secret and group script runs under one notebook session
+- expect verbose stage-by-stage console logging by default; pass `--quiet` only when you want less output from individual scripts
 - use the paired summaries before changing prompts or budgets
 
 ### 4. Colab GPU deployment

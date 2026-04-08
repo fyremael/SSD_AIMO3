@@ -22,6 +22,7 @@ It now defaults to a **zero-edit real benchmark preset**:
 - switch `EXPERIMENT_MODE` to `starter` when you want the fast fixture-backed harness check
 - switch `EXPERIMENT_MODE` to `real` with `REAL_MODE_PRESET = ""` only when you want to supply your own model and manifests and fail fast if they are incomplete
 - authenticate W&B automatically from the `WANDB_API_KEY` Colab secret and group child runs under the notebook session
+- console logging is verbose by default throughout the pipeline; use `--quiet` on individual scripts only when you want to suppress step-level progress messages
 
 Reason:
 

@@ -8,7 +8,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from common import resolve_config_path  # noqa: E402
+from common import build_arg_parser, resolve_config_from_args, resolve_config_path, resolve_verbose  # noqa: E402
 
 
 def test_resolve_config_path_supports_fragment_inheritance(tmp_path: Path) -> None:
@@ -70,3 +70,17 @@ def test_resolve_config_path_rejects_inheritance_cycles(tmp_path: Path) -> None:
         assert "cycle" in str(exc).lower()
     else:
         raise AssertionError("Expected config cycle detection to raise ValueError")
+
+
+def test_build_arg_parser_defaults_to_verbose_and_supports_quiet(tmp_path: Path) -> None:
+    parser = build_arg_parser("smoke")
+
+    args = parser.parse_args(["--output-dir", str(tmp_path)])
+    config = resolve_config_from_args(args)
+    assert config["runtime"]["verbose"] is True
+    assert resolve_verbose(args, config) is True
+
+    quiet_args = parser.parse_args(["--output-dir", str(tmp_path), "--quiet"])
+    quiet_config = resolve_config_from_args(quiet_args)
+    assert quiet_config["runtime"]["verbose"] is False
+    assert resolve_verbose(quiet_args, quiet_config) is False

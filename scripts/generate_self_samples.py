@@ -8,8 +8,10 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from common import (
     build_arg_parser,
+    log_event,
     read_jsonl,
     render_string_template,
+    resolve_verbose,
     resolve_config_from_args,
     save_resolved_config,
     save_run_manifest,
@@ -374,6 +376,7 @@ def main() -> None:
         },
     ) as wandb_session:
         save_resolved_config(output_dir, config)
+        verbose = resolve_verbose(args, config)
 
         prompt_records = load_prompt_records(config, args.input_jsonl, dry_run=bool(args.dry_run))
         template_name, template_text = choose_template(config, args.template_name)
@@ -381,6 +384,18 @@ def main() -> None:
             args.num_samples if args.num_samples is not None else config.get("generation", {}).get("num_return_sequences_train", 1)
         )
         max_answer = int(config.get("extraction", {}).get("max_answer", DEFAULT_MAX_ANSWER))
+        log_event(
+            "Generating self samples",
+            payload={
+                "num_prompts": len(prompt_records),
+                "template_name": template_name,
+                "num_samples_per_prompt": max(1, num_samples),
+                "generation_backend": str(config.get("generation", {}).get("backend", "replay_or_stub")),
+                "max_answer": max_answer,
+                "dry_run": bool(args.dry_run),
+            },
+            verbose=verbose,
+        )
         generation_rows = build_generation_rows(
             prompt_records,
             config=config,
@@ -405,6 +420,14 @@ def main() -> None:
 
         write_jsonl(output_dir / "generations.jsonl", generation_rows)
         write_json(output_dir / "generation_metrics.json", metrics)
+        log_event(
+            "Completed self-sample generation",
+            payload={
+                **metrics,
+                "output_jsonl": str((output_dir / "generations.jsonl").resolve()),
+            },
+            verbose=verbose,
+        )
         save_run_manifest(
             output_dir,
             {

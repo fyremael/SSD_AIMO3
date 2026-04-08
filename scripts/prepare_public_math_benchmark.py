@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
-from common import write_json, write_jsonl
+from common import add_verbosity_args, log_event, write_json, write_jsonl
 from wandb_support import wandb_run_context
 
 
@@ -174,13 +174,26 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-limit", type=int, default=64)
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--max-answer", type=int, default=99999)
-    return parser
+    return add_verbosity_args(parser)
 
 
 def main() -> None:
     args = build_parser().parse_args()
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+    verbose = not bool(args.quiet)
+    log_event(
+        "Preparing public math benchmark",
+        payload={
+            "preset": args.preset,
+            "output_dir": str(output_dir),
+            "train_limit": args.train_limit,
+            "eval_limit": args.eval_limit,
+            "seed": args.seed,
+            "max_answer": args.max_answer,
+        },
+        verbose=verbose,
+    )
 
     with wandb_run_context(
         config=None,
@@ -196,6 +209,11 @@ def main() -> None:
         },
     ) as wandb_session:
         train_rows, eval_rows = load_preset_splits(args.preset)
+        log_event(
+            "Loaded public benchmark splits",
+            payload={"raw_train_rows": len(train_rows), "raw_eval_rows": len(eval_rows)},
+            verbose=verbose,
+        )
         prompt_manifest, eval_manifest, metadata_manifest, summary = build_manifest_rows(
             preset_name=args.preset,
             train_rows=train_rows,
@@ -210,6 +228,16 @@ def main() -> None:
         write_jsonl(output_dir / "eval_manifest.jsonl", eval_manifest)
         write_jsonl(output_dir / "problem_metadata.jsonl", metadata_manifest)
         write_json(output_dir / "benchmark_summary.json", summary)
+        log_event(
+            "Prepared public benchmark manifests",
+            payload={
+                **summary,
+                "prompt_manifest_jsonl": str((output_dir / "prompt_manifest.jsonl").resolve()),
+                "eval_manifest_jsonl": str((output_dir / "eval_manifest.jsonl").resolve()),
+                "problem_metadata_jsonl": str((output_dir / "problem_metadata.jsonl").resolve()),
+            },
+            verbose=verbose,
+        )
 
         wandb_session.log_metrics(summary, prefix="public_benchmark")
         wandb_session.update_summary(summary, prefix="public_benchmark")

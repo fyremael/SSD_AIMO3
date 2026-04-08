@@ -8,7 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
-from common import ensure_parent, read_json, read_jsonl, write_json, write_jsonl
+from common import add_verbosity_args, ensure_parent, log_event, read_json, read_jsonl, write_json, write_jsonl
 from wandb_support import wandb_run_context
 
 
@@ -382,13 +382,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--run-b-label", default=None)
     parser.add_argument("--metadata-jsonl", default=None, help="Optional per-problem metadata with topic/difficulty/tags")
     parser.add_argument("--output-dir", required=True)
-    return parser
+    return add_verbosity_args(parser)
 
 
 def main() -> None:
     args = build_parser().parse_args()
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    verbose = not bool(args.quiet)
+    log_event(
+        "Comparing evaluation runs",
+        payload={
+            "run_a_dir": str(Path(args.run_a_dir).resolve()),
+            "run_b_dir": str(Path(args.run_b_dir).resolve()),
+            "run_a_label": args.run_a_label,
+            "run_b_label": args.run_b_label,
+            "metadata_jsonl": str(Path(args.metadata_jsonl).resolve()) if args.metadata_jsonl else None,
+        },
+        verbose=verbose,
+    )
     with wandb_run_context(
         config=None,
         output_dir=output_dir,
@@ -432,6 +444,16 @@ def main() -> None:
         write_csv(output_dir / "paired_problem_comparison.csv", comparisons)
         (output_dir / "comparison_report.md").write_text(render_markdown_report(summary, comparisons), encoding="utf-8")
         write_json(output_dir / "comparison_manifest.json", manifest)
+        log_event(
+            "Completed paired comparison",
+            payload={
+                "summary_json": str((output_dir / "comparison_summary.json").resolve()),
+                "discordant_pairs": summary.get("discordant_pairs"),
+                "net_gain_b_minus_a": summary.get("net_gain_b_minus_a"),
+                "paired_sign_test_pvalue_two_sided": summary.get("paired_sign_test_pvalue_two_sided"),
+            },
+            verbose=verbose,
+        )
 
         wandb_session.log_metrics(summary, prefix="comparison")
         wandb_session.update_summary(

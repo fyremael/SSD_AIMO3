@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
-from common import ensure_parent, write_json, write_jsonl
+from common import add_verbosity_args, log_event, write_json, write_jsonl
 from wandb_support import wandb_run_context
 
 
@@ -174,12 +174,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--tags-field", default="tags")
     parser.add_argument("--source-field", default=None)
     parser.add_argument("--source-name", default=None)
-    return parser
+    return add_verbosity_args(parser)
 
 
 def main() -> None:
     args = build_parser().parse_args()
     summary_path = Path(args.summary_json).resolve()
+    verbose = not bool(args.quiet)
+    log_event(
+        "Starting manifest normalization",
+        payload={
+            "input_path": str(Path(args.input_path).resolve()),
+            "input_format": args.input_format,
+            "prompt_output_jsonl": str(Path(args.prompt_output_jsonl).resolve()),
+            "eval_output_jsonl": str(Path(args.eval_output_jsonl).resolve()),
+            "metadata_output_jsonl": str(Path(args.metadata_output_jsonl).resolve()),
+        },
+        verbose=verbose,
+    )
     with wandb_run_context(
         config=None,
         output_dir=summary_path.parent,
@@ -194,6 +206,7 @@ def main() -> None:
         },
     ) as wandb_session:
         rows = _load_rows(Path(args.input_path), args.input_format)
+        log_event("Loaded raw problem rows", payload={"num_rows": len(rows)}, verbose=verbose)
         prompt_rows, eval_rows, metadata_rows = build_manifests(
             rows,
             problem_id_field=args.problem_id_field,
@@ -217,6 +230,14 @@ def main() -> None:
             "num_metadata_rows": len(metadata_rows),
         }
         write_json(summary_path, summary)
+        log_event(
+            "Finished manifest normalization",
+            payload={
+                **summary,
+                "summary_json": str(summary_path),
+            },
+            verbose=verbose,
+        )
 
         wandb_session.log_metrics(summary, prefix="manifest")
         wandb_session.update_summary(summary, prefix="manifest")
