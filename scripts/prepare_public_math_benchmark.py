@@ -20,7 +20,7 @@ PUBLIC_PRESETS: Dict[str, JsonDict] = {
         "prompt_field": "question",
         "answer_field": "answer",
         "source_name": "567-labs/gsm8k",
-        "recommended_model_id": "Qwen/Qwen2.5-Math-1.5B",
+        "recommended_model_id": "Qwen/Qwen2.5-Math-1.5B-Instruct",
         "topic": "grade_school_math",
         "difficulty": "gsm8k",
         "tags": ["gsm8k", "grade_school_math", "word_problem"],

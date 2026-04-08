@@ -55,4 +55,4 @@ def test_build_manifest_rows_filters_negative_answers_and_applies_limits() -> No
     assert all(row["gold_answer"] >= 0 for row in eval_manifest)
     assert summary["eligible_train_rows"] == 2
     assert summary["eligible_eval_rows"] == 2
-    assert summary["recommended_model_id"] == "Qwen/Qwen2.5-Math-1.5B"
+    assert summary["recommended_model_id"] == "Qwen/Qwen2.5-Math-1.5B-Instruct"

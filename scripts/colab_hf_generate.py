@@ -44,6 +44,30 @@ def normalize_generation_outputs(
     return rows
 
 
+def render_model_prompts(
+    request_rows: Sequence[Mapping[str, Any]],
+    *,
+    prompt_field: str,
+    tokenizer: Any,
+    use_chat_template: bool,
+    system_prompt: str | None,
+) -> List[str]:
+    prompt_rows = [str(row.get(prompt_field, "")) for row in request_rows]
+    if not use_chat_template:
+        return prompt_rows
+    if not hasattr(tokenizer, "apply_chat_template"):
+        raise ValueError("Tokenizer does not support apply_chat_template but --use-chat-template was requested")
+
+    rendered: List[str] = []
+    for prompt_text in prompt_rows:
+        messages: List[Dict[str, str]] = []
+        if str(system_prompt or "").strip():
+            messages.append({"role": "system", "content": str(system_prompt).strip()})
+        messages.append({"role": "user", "content": prompt_text})
+        rendered.append(tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
+    return rendered
+
+
 def _resolve_torch_dtype(torch_module: Any, dtype_name: str) -> Any:
     mapping = {
         "float16": torch_module.float16,
@@ -60,7 +84,6 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
 
     dtype_name = parse_dtype_name(args.dtype)
     request_rows = read_jsonl(args.input_jsonl)
-    prompt_rows = [str(row.get(args.prompt_field, "")) for row in request_rows]
 
     tokenizer_id = str(args.tokenizer_id or args.model_id)
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, trust_remote_code=bool(args.trust_remote_code))
@@ -94,7 +117,13 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
 
     generated_rows: List[JsonDict] = []
     for request_batch in batched(request_rows, args.batch_size):
-        prompt_batch = [str(row.get(args.prompt_field, "")) for row in request_batch]
+        prompt_batch = render_model_prompts(
+            request_batch,
+            prompt_field=args.prompt_field,
+            tokenizer=tokenizer,
+            use_chat_template=bool(args.use_chat_template),
+            system_prompt=args.system_prompt,
+        )
         tokenized = tokenizer(
             prompt_batch,
             return_tensors="pt",
@@ -139,6 +168,8 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
         "dtype": dtype_name,
         "prompt_field": args.prompt_field,
         "output_field": args.output_field,
+        "use_chat_template": bool(args.use_chat_template),
+        "system_prompt": args.system_prompt,
     }
     if args.summary_json:
         write_json(Path(args.summary_json), summary)
@@ -165,6 +196,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dtype", default="auto")
     parser.add_argument("--quantization", choices=["none", "4bit", "8bit"], default="none")
     parser.add_argument("--trust-remote-code", action="store_true")
+    parser.add_argument("--use-chat-template", action="store_true")
+    parser.add_argument("--system-prompt", default=None)
     return parser
 
 

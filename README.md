@@ -43,7 +43,7 @@ Use the notebook when the goal is to methodically validate or invalidate the the
 
 - open [`notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb) in Colab
 - leave it in the default `EXPERIMENT_MODE = "auto"` setting for the first thesis-facing run
-- by default, `auto` bootstraps a public GSM8K-based benchmark and uses `Qwen/Qwen2.5-Math-1.5B` as the starting model
+- by default, `auto` bootstraps a public GSM8K-based benchmark and uses `Qwen/Qwen2.5-Math-1.5B-Instruct` as the starting model
 - switch `EXPERIMENT_MODE` to `starter` when you want the fast fixture-backed harness check instead
 - switch `EXPERIMENT_MODE` to `\"real\"` with `REAL_MODE_PRESET = \"\"` only when you want to bring your own model and manifests
 - let it clone the repo, install the GPU stack, and normalize manifests if needed
