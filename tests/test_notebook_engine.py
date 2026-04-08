@@ -29,8 +29,10 @@ def test_notebook_covers_bootstrap_bundle_and_decision_flow() -> None:
     assert "github.com/fyremael/SSD_AIMO3.git" in notebook_text
     assert "decision_summary.json" in notebook_text
     assert "EXPERIMENT_MODE" in notebook_text
+    assert "RESOLVED_EXPERIMENT_MODE" in notebook_text
+    assert "EXPERIMENT_MODE = \\\"auto\\\"" in notebook_text
     assert "starter_fixture_complete" in notebook_text
     assert "run_validation_ladder.py" in notebook_text
     assert "WANDB_API_KEY" in notebook_text
     assert "google.colab" in notebook_text
-    assert "validate_real_mode_inputs" in notebook_text
+    assert "collect_real_mode_issues" in notebook_text

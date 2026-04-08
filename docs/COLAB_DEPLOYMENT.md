@@ -17,8 +17,9 @@ That notebook is meant to be the primary initial experimentation engine because 
 
 It now defaults to a **zero-edit starter preset**:
 
-- run the notebook unchanged for a fixture-backed end-to-end starter pass
-- switch `EXPERIMENT_MODE` to `real` only when you want to supply your own model and manifests
+- leave the notebook in its default `EXPERIMENT_MODE = "auto"` setting for a zero-edit first run
+- in `auto`, it uses your real model and manifests only when they are fully configured and otherwise falls back to the built-in fixture ladder
+- switch `EXPERIMENT_MODE` to `real` only when you want to supply your own model and manifests and fail fast if they are incomplete
 - authenticate W&B automatically from the `WANDB_API_KEY` Colab secret and group child runs under the notebook session
 
 Reason:
@@ -34,7 +35,7 @@ Choose `Runtime -> Change runtime type -> T4 / L4 / A100 GPU` if available.
 
 If you are starting from the notebook, open [`../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb) in Colab first. It bootstraps the repo into `/content/SSD_AIMO3` and then runs the same steps documented below.
 
-If you just want a no-configuration smoke pass, leave the notebook in its default `starter` mode and run it top-to-bottom.
+If you just want a no-configuration smoke pass, leave the notebook in its default `auto` mode and run it top-to-bottom.
 
 Probe the runtime first:
 

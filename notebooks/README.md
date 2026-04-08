@@ -8,8 +8,9 @@ This notebook is the intended first engine for Colab-based experimentation.
 
 Default behavior:
 
-- run it without edits for a self-contained fixture-backed starter pass
-- switch `EXPERIMENT_MODE` to `real` when you want to point it at a real model and corpus
+- leave it in the default `EXPERIMENT_MODE = "auto"` setting for a self-contained first run
+- in `auto`, the notebook uses real inputs if they are fully configured and otherwise falls back to the built-in fixture ladder
+- switch `EXPERIMENT_MODE` to `real` only when you want missing real inputs to stop the run
 - provide a Colab secret named `WANDB_API_KEY` so the notebook can authenticate W&B automatically
 
 It is structured to:
