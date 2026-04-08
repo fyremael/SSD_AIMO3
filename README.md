@@ -42,9 +42,10 @@ python scripts/build_problem_manifests.py \
 Use the notebook when the goal is to methodically validate or invalidate the thesis:
 
 - open [`notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb) in Colab
-- leave it in the default `EXPERIMENT_MODE = "auto"` setting for a self-contained first run
-- let `auto` use your real model and manifests only when they are fully configured, otherwise it will fall back to the built-in fixture ladder
-- switch `EXPERIMENT_MODE` to `\"real\"` only when you want missing real inputs to stop the run
+- leave it in the default `EXPERIMENT_MODE = "auto"` setting for the first thesis-facing run
+- by default, `auto` bootstraps a public GSM8K-based benchmark and uses `Qwen/Qwen2.5-Math-1.5B` as the starting model
+- switch `EXPERIMENT_MODE` to `starter` when you want the fast fixture-backed harness check instead
+- switch `EXPERIMENT_MODE` to `\"real\"` with `REAL_MODE_PRESET = \"\"` only when you want to bring your own model and manifests
 - let it clone the repo, install the GPU stack, and normalize manifests if needed
 - let it authenticate W&B from the `WANDB_API_KEY` Colab secret and group script runs under one notebook session
 - use the paired summaries before changing prompts or budgets

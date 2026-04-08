@@ -36,3 +36,5 @@ def test_notebook_covers_bootstrap_bundle_and_decision_flow() -> None:
     assert "WANDB_API_KEY" in notebook_text
     assert "google.colab" in notebook_text
     assert "collect_real_mode_issues" in notebook_text
+    assert "prepare_public_math_benchmark.py" in notebook_text
+    assert "public_gsm8k_qwen25_math_1p5b" in notebook_text

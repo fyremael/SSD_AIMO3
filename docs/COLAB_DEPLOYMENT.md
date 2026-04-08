@@ -15,11 +15,12 @@ That notebook is meant to be the primary initial experimentation engine because 
 - run the same extraction and comparison contract across the full ladder
 - emit a decision-ready summary before another round of prompt or budget changes
 
-It now defaults to a **zero-edit starter preset**:
+It now defaults to a **zero-edit real benchmark preset**:
 
-- leave the notebook in its default `EXPERIMENT_MODE = "auto"` setting for a zero-edit first run
-- in `auto`, it uses your real model and manifests only when they are fully configured and otherwise falls back to the built-in fixture ladder
-- switch `EXPERIMENT_MODE` to `real` only when you want to supply your own model and manifests and fail fast if they are incomplete
+- leave the notebook in its default `EXPERIMENT_MODE = "auto"` setting for a zero-edit first thesis-facing run
+- in `auto`, it bootstraps a public GSM8K-based benchmark and uses a small public math model by default
+- switch `EXPERIMENT_MODE` to `starter` when you want the fast fixture-backed harness check
+- switch `EXPERIMENT_MODE` to `real` with `REAL_MODE_PRESET = ""` only when you want to supply your own model and manifests and fail fast if they are incomplete
 - authenticate W&B automatically from the `WANDB_API_KEY` Colab secret and group child runs under the notebook session
 
 Reason:
@@ -35,7 +36,7 @@ Choose `Runtime -> Change runtime type -> T4 / L4 / A100 GPU` if available.
 
 If you are starting from the notebook, open [`../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb`](../notebooks/SSD_AIMO3_Thesis_Validation_Engine.ipynb) in Colab first. It bootstraps the repo into `/content/SSD_AIMO3` and then runs the same steps documented below.
 
-If you just want a no-configuration smoke pass, leave the notebook in its default `auto` mode and run it top-to-bottom.
+If you want the quickest possible harness-only smoke pass, set `EXPERIMENT_MODE = "starter"` and run the notebook top-to-bottom.
 
 Probe the runtime first:
 
