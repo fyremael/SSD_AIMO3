@@ -44,6 +44,13 @@ def normalize_generation_outputs(
     return rows
 
 
+def configure_tokenizer_for_generation(tokenizer: Any) -> Any:
+    if getattr(tokenizer, "pad_token", None) is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
+    return tokenizer
+
+
 def render_model_prompts(
     request_rows: Sequence[Mapping[str, Any]],
     *,
@@ -87,8 +94,7 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
 
     tokenizer_id = str(args.tokenizer_id or args.model_id)
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, trust_remote_code=bool(args.trust_remote_code))
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer = configure_tokenizer_for_generation(tokenizer)
 
     model_kwargs: Dict[str, Any] = {
         "trust_remote_code": bool(args.trust_remote_code),
@@ -170,6 +176,7 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
         "output_field": args.output_field,
         "use_chat_template": bool(args.use_chat_template),
         "system_prompt": args.system_prompt,
+        "padding_side": getattr(tokenizer, "padding_side", None),
     }
     if args.summary_json:
         write_json(Path(args.summary_json), summary)

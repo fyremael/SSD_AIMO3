@@ -11,6 +11,7 @@ if str(SCRIPTS) not in sys.path:
 from colab_hf_generate import (  # noqa: E402
     batched,
     build_parser,
+    configure_tokenizer_for_generation,
     normalize_generation_outputs,
     parse_dtype_name,
     render_model_prompts,
@@ -80,3 +81,14 @@ def test_render_model_prompts_uses_chat_template_when_requested() -> None:
         system_prompt="solve carefully",
     )
     assert rendered == ["system=solve carefully | user=Compute 2+3."]
+
+
+def test_configure_tokenizer_for_generation_sets_left_padding() -> None:
+    class StubTokenizer:
+        pad_token = None
+        eos_token = "<eos>"
+        padding_side = "right"
+
+    tokenizer = configure_tokenizer_for_generation(StubTokenizer())
+    assert tokenizer.pad_token == "<eos>"
+    assert tokenizer.padding_side == "left"
