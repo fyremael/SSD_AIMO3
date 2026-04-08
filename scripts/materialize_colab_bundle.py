@@ -13,6 +13,46 @@ from wandb_support import wandb_run_context
 JsonDict = Dict[str, Any]
 
 
+def _is_placeholder(value: Optional[str]) -> bool:
+    return isinstance(value, str) and value.startswith("REPLACE_WITH_")
+
+
+def validate_inputs(
+    *,
+    model_id: str,
+    prompt_manifest_jsonl: str,
+    eval_prompt_manifest_jsonl: str,
+    problem_metadata_jsonl: str,
+    student_adapter_path: Optional[str],
+) -> None:
+    errors = []
+    if not str(model_id).strip() or _is_placeholder(model_id):
+        errors.append("model_id must be set to a real model identifier before materializing the Colab bundle")
+
+    for label, raw_path in (
+        ("prompt_manifest_jsonl", prompt_manifest_jsonl),
+        ("eval_prompt_manifest_jsonl", eval_prompt_manifest_jsonl),
+        ("problem_metadata_jsonl", problem_metadata_jsonl),
+    ):
+        if _is_placeholder(raw_path):
+            errors.append(f"{label} is still a placeholder: {raw_path}")
+            continue
+        path = Path(raw_path).resolve()
+        if not path.exists():
+            errors.append(f"{label} does not exist: {path}")
+
+    if student_adapter_path:
+        if _is_placeholder(student_adapter_path):
+            errors.append(f"student_adapter_path is still a placeholder: {student_adapter_path}")
+        else:
+            adapter_path = Path(student_adapter_path).resolve()
+            if not adapter_path.exists():
+                errors.append(f"student_adapter_path does not exist: {adapter_path}")
+
+    if errors:
+        raise ValueError("Invalid Colab bundle inputs:\n- " + "\n- ".join(errors))
+
+
 def materialize_config(
     *,
     base_config_path: str,
@@ -123,6 +163,14 @@ def main() -> None:
             "student_adapter_path": args.student_adapter_path,
         },
     ) as wandb_session:
+        validate_inputs(
+            model_id=args.model_id,
+            prompt_manifest_jsonl=args.prompt_manifest_jsonl,
+            eval_prompt_manifest_jsonl=args.eval_prompt_manifest_jsonl,
+            problem_metadata_jsonl=args.problem_metadata_jsonl,
+            student_adapter_path=args.student_adapter_path,
+        )
+
         overrides = build_overrides(
             model_id=args.model_id,
             prompt_manifest_jsonl=args.prompt_manifest_jsonl,

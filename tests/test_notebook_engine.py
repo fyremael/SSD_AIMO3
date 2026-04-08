@@ -23,7 +23,7 @@ def test_notebook_is_valid_ipynb_json() -> None:
 def test_notebook_covers_bootstrap_bundle_and_decision_flow() -> None:
     notebook = _load_notebook()
     cell_ids = {cell.get("metadata", {}).get("id") for cell in notebook["cells"]}
-    assert {"setup", "params", "bootstrap", "runtime", "bundle", "a1eval", "a5compare", "decision", "starter"} <= cell_ids
+    assert {"setup", "params", "bootstrap", "preflight", "runtime", "bundle", "a1eval", "a5compare", "decision", "starter"} <= cell_ids
 
     notebook_text = json.dumps(notebook)
     assert "github.com/fyremael/SSD_AIMO3.git" in notebook_text
@@ -33,3 +33,4 @@ def test_notebook_covers_bootstrap_bundle_and_decision_flow() -> None:
     assert "run_validation_ladder.py" in notebook_text
     assert "WANDB_API_KEY" in notebook_text
     assert "google.colab" in notebook_text
+    assert "validate_real_mode_inputs" in notebook_text
