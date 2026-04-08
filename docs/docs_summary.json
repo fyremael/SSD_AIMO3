@@ -1,8 +1,8 @@
 {
   "docs_count": 9,
   "config_count": 18,
-  "script_count": 19,
-  "test_count": 19,
+  "script_count": 20,
+  "test_count": 20,
   "fixture_data_count": 5,
   "notebook_count": 1,
   "workflow_count": 1,
@@ -182,6 +182,10 @@
     {
       "path": "scripts/mock_external_trainer.py",
       "description": "Mock external training backend for smoke tests"
+    },
+    {
+      "path": "scripts/prepare_public_math_benchmark.py",
+      "description": "Download and normalize a public math benchmark for SSD_AIMO3 real-mode runs"
     },
     {
       "path": "scripts/run_eval_math.py",
