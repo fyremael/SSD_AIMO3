@@ -1,8 +1,8 @@
 {
   "docs_count": 9,
   "config_count": 18,
-  "script_count": 20,
-  "test_count": 20,
+  "script_count": 21,
+  "test_count": 21,
   "fixture_data_count": 5,
   "notebook_count": 1,
   "workflow_count": 1,
@@ -138,6 +138,10 @@
     {
       "path": "scripts/build_problem_manifests.py",
       "description": "Normalize raw problem data into prompt/eval/metadata JSONL manifests"
+    },
+    {
+      "path": "scripts/check_quality_gate.py",
+      "description": "Check quality gates for SSD_AIMO3 stage outputs"
     },
     {
       "path": "scripts/colab_hf_generate.py",
