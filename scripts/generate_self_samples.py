@@ -415,6 +415,16 @@ def main() -> None:
             "generation_backend": str(config.get("generation", {}).get("backend", "replay_or_stub")),
             "extraction_status_counts": _count_values(generation_rows, "extraction_status"),
             "filter_status_counts": _count_values(generation_rows, "filter_status"),
+            "extraction_success_rate": (
+                _count_values(generation_rows, "extraction_status").get("ok", 0) / len(generation_rows)
+                if generation_rows
+                else None
+            ),
+            "filter_keep_rate": (
+                _count_values(generation_rows, "filter_status").get("kept", 0) / len(generation_rows)
+                if generation_rows
+                else None
+            ),
             "dry_run": bool(args.dry_run),
         }
 

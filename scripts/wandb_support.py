@@ -284,6 +284,7 @@ def maybe_init_wandb(
     tags = _coerce_string_list(_env("TAGS")) or _coerce_string_list(wandb_config.get("tags"))
     notes = _env("NOTES") or wandb_config.get("notes")
     wandb_dir = _env("DIR") or wandb_config.get("dir") or os.environ.get("WANDB_DIR")
+    silent = _coerce_bool(_env("SILENT"), _coerce_bool(os.environ.get("WANDB_SILENT"), False))
     log_artifacts = _coerce_bool(_env("LOG_ARTIFACTS"), _coerce_bool(wandb_config.get("log_artifacts"), True))
     artifact_max_file_size_mb = _coerce_int(
         _env("ARTIFACT_MAX_FILE_SIZE_MB"),
@@ -316,10 +317,11 @@ def maybe_init_wandb(
         "name": resolved_name,
         "group": group,
         "config": init_config,
-        "reinit": True,
+        "reinit": "finish_previous",
         "mode": mode,
         "tags": tags or None,
         "notes": notes,
+        "settings": wandb.Settings(silent=silent),
     }
     if entity:
         init_kwargs["entity"] = entity

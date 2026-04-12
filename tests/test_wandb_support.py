@@ -52,7 +52,11 @@ def fake_wandb(monkeypatch):
         state["init_kwargs"] = kwargs
         return run
 
-    module = SimpleNamespace(init=fake_init, Artifact=FakeArtifact)
+    class FakeSettings:
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = dict(kwargs)
+
+    module = SimpleNamespace(init=fake_init, Artifact=FakeArtifact, Settings=FakeSettings)
     monkeypatch.setitem(sys.modules, "wandb", module)
     return run, state
 
@@ -76,6 +80,8 @@ def test_maybe_init_wandb_uses_env_group_and_logs_artifact(monkeypatch, fake_wan
     assert state["init_kwargs"]["project"] == "test-project"
     assert state["init_kwargs"]["group"] == "session-group"
     assert state["init_kwargs"]["name"].startswith("session-prefix-")
+    assert state["init_kwargs"]["reinit"] == "finish_previous"
+    assert state["init_kwargs"]["settings"].kwargs["silent"] is False
 
     session.log_metrics(
         {

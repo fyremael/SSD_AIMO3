@@ -38,3 +38,6 @@ def test_notebook_covers_bootstrap_bundle_and_decision_flow() -> None:
     assert "collect_real_mode_issues" in notebook_text
     assert "prepare_public_math_benchmark.py" in notebook_text
     assert "public_gsm8k_qwen25_math_1p5b" in notebook_text
+    assert "check_quality_gate.py" in notebook_text
+    assert "ENFORCE_QUALITY_GATES = True" in notebook_text
+    assert "blocked_low_valid_answer_rate" in notebook_text
