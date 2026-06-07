@@ -23,3 +23,14 @@ default_pair:
 
         Problem:
         {prompt_text}
+      template_concise_extractable: |
+        Solve the following math problem.
+        The answer must be a single non-negative integer in [0, 99999].
+        Keep the reasoning brief: at most 3 short steps.
+        Your final two lines must be exactly:
+        \boxed{answer}
+        Final Answer: answer
+        Do not write any text after the `Final Answer:` line.
+
+        Problem:
+        {prompt_text}

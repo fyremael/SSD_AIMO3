@@ -51,6 +51,27 @@ def configure_tokenizer_for_generation(tokenizer: Any) -> Any:
     return tokenizer
 
 
+def summarize_token_counts(token_counts: Sequence[int], *, limit: int | None = None) -> JsonDict:
+    values = [max(0, int(count)) for count in token_counts]
+    if not values:
+        return {
+            "mean_token_count": None,
+            "max_token_count": None,
+            "num_at_limit": 0,
+            "rate_at_limit": None,
+        }
+
+    num_at_limit = 0
+    if limit is not None:
+        num_at_limit = sum(1 for count in values if count >= int(limit))
+    return {
+        "mean_token_count": sum(values) / len(values),
+        "max_token_count": max(values),
+        "num_at_limit": num_at_limit,
+        "rate_at_limit": (num_at_limit / len(values)) if limit is not None else None,
+    }
+
+
 def render_model_prompts(
     request_rows: Sequence[Mapping[str, Any]],
     *,
@@ -138,6 +159,8 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
         model_device = torch.device("cpu")
 
     generated_rows: List[JsonDict] = []
+    prompt_token_counts: List[int] = []
+    output_token_counts: List[int] = []
     total_batches = max(1, (len(request_rows) + args.batch_size - 1) // args.batch_size)
     for batch_index, request_batch in enumerate(batched(request_rows, args.batch_size), start=1):
         log_event(
@@ -180,12 +203,17 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
         attention_mask = tokenized.get("attention_mask")
         for row_index in range(output_ids.shape[0]):
             input_length = int(attention_mask[row_index].sum().item()) if attention_mask is not None else tokenized["input_ids"].shape[1]
+            prompt_token_counts.append(input_length)
             continuation_ids = output_ids[row_index][input_length:]
+            output_token_counts.append(int(continuation_ids.shape[0]))
             decoded_generations.append(tokenizer.decode(continuation_ids, skip_special_tokens=True).strip())
 
         generated_rows.extend(
             normalize_generation_outputs(request_batch, decoded_generations, output_field=args.output_field)
         )
+
+    prompt_summary = summarize_token_counts(prompt_token_counts, limit=args.max_prompt_length)
+    output_summary = summarize_token_counts(output_token_counts, limit=args.max_new_tokens)
 
     write_jsonl(Path(args.output_jsonl), generated_rows)
     summary = {
@@ -202,6 +230,16 @@ def run_generation(args: argparse.Namespace) -> JsonDict:
         "use_chat_template": bool(args.use_chat_template),
         "system_prompt": args.system_prompt,
         "padding_side": getattr(tokenizer, "padding_side", None),
+        "max_prompt_length": args.max_prompt_length,
+        "mean_prompt_tokens": prompt_summary["mean_token_count"],
+        "max_prompt_tokens": prompt_summary["max_token_count"],
+        "num_prompts_at_max_length": prompt_summary["num_at_limit"],
+        "prompt_at_max_length_rate": prompt_summary["rate_at_limit"],
+        "max_new_tokens": args.max_new_tokens,
+        "mean_output_tokens": output_summary["mean_token_count"],
+        "max_output_tokens": output_summary["max_token_count"],
+        "num_outputs_at_max_new_tokens": output_summary["num_at_limit"],
+        "output_at_max_new_tokens_rate": output_summary["rate_at_limit"],
     }
     if args.summary_json:
         write_json(Path(args.summary_json), summary)

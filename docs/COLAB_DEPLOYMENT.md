@@ -23,6 +23,7 @@ It now defaults to a **zero-edit real benchmark preset**:
 - switch `EXPERIMENT_MODE` to `real` with `REAL_MODE_PRESET = ""` only when you want to supply your own model and manifests and fail fast if they are incomplete
 - authenticate W&B automatically from the `WANDB_API_KEY` Colab secret and group child runs under the notebook session
 - the notebook defaults to quieter W&B console behavior and will now stop early on low extractability / low valid-answer-rate stages when quality gates fail
+- a failed quality gate now produces a blocked decision summary and skips downstream real-mode stages cleanly instead of bubbling up a generic subprocess traceback
 - console logging is verbose by default throughout the pipeline; use `--quiet` on individual scripts only when you want to suppress step-level progress messages
 
 Reason:
@@ -134,6 +135,7 @@ python scripts/generate_self_samples.py \
 
 This calls `scripts/colab_hf_generate.py` through the repo's `command_jsonl` interface.
 With notebook-driven W&B enabled, both the higher-level generation script and the backend generator emit grouped telemetry.
+The backend summary now includes prompt/output token usage plus counts for requests that hit `max_prompt_length` or `max_new_tokens`, which helps distinguish extractability failures from token-budget truncation.
 
 ## 6. Package and launch A1 LoRA training
 

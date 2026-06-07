@@ -15,6 +15,7 @@ from colab_hf_generate import (  # noqa: E402
     normalize_generation_outputs,
     parse_dtype_name,
     render_model_prompts,
+    summarize_token_counts,
 )
 
 
@@ -92,3 +93,11 @@ def test_configure_tokenizer_for_generation_sets_left_padding() -> None:
     tokenizer = configure_tokenizer_for_generation(StubTokenizer())
     assert tokenizer.pad_token == "<eos>"
     assert tokenizer.padding_side == "left"
+
+
+def test_summarize_token_counts_reports_limit_hits() -> None:
+    summary = summarize_token_counts([12, 64, 64], limit=64)
+    assert summary["mean_token_count"] == 140 / 3
+    assert summary["max_token_count"] == 64
+    assert summary["num_at_limit"] == 2
+    assert summary["rate_at_limit"] == 2 / 3

@@ -49,6 +49,7 @@ Use the notebook when the goal is to methodically validate or invalidate the the
 - let it clone the repo, install the GPU stack, and normalize manifests if needed
 - let it authenticate W&B from the `WANDB_API_KEY` Colab secret and group script runs under one notebook session
 - default notebook behavior now keeps W&B output quieter and enforces quality gates on extractability/valid-answer rate before trusting real-mode conclusions
+- when a quality gate fails, the notebook now records a blocked decision summary and skips downstream real-mode stages instead of surfacing a generic subprocess traceback
 - expect verbose stage-by-stage console logging by default; pass `--quiet` only when you want less output from individual scripts
 - use the paired summaries before changing prompts or budgets
 

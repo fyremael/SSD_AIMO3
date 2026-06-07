@@ -41,3 +41,5 @@ def test_notebook_covers_bootstrap_bundle_and_decision_flow() -> None:
     assert "check_quality_gate.py" in notebook_text
     assert "ENFORCE_QUALITY_GATES = True" in notebook_text
     assert "blocked_low_valid_answer_rate" in notebook_text
+    assert "QUALITY_GATES_BLOCKED = False" in notebook_text
+    assert "skipped_due_to_quality_gate" in notebook_text
